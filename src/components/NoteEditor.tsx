@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { analyzeText } from "@/services/aiService";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { CirclePlus, Save, SquarePen, MessageCircle, ArrowLeft, BrainCircuit } from "lucide-react";
 import {
   DropdownMenu,

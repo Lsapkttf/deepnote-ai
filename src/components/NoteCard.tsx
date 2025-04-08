@@ -1,7 +1,7 @@
 
 import { Note } from "@/types/note";
 import { cn } from "@/lib/utils";
-import { MoreHorizontal, Pin, Mic } from "lucide-react";
+import { MoreHorizontal, Pin, Mic, Archive, Trash } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -17,9 +17,10 @@ interface NoteCardProps {
   onClick: () => void;
   onPin: () => void;
   onDelete: () => void;
+  onArchive: () => void;
 }
 
-const NoteCard = ({ note, onClick, onPin, onDelete }: NoteCardProps) => {
+const NoteCard = ({ note, onClick, onPin, onDelete, onArchive }: NoteCardProps) => {
   const getPreviewText = () => {
     if (note.type === 'voice' && note.transcription) {
       return note.transcription;
@@ -54,7 +55,15 @@ const NoteCard = ({ note, onClick, onPin, onDelete }: NoteCardProps) => {
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onPin(); }}>
               {note.pinned ? "Désépingler" : "Épingler"}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(); }}>
+              <Archive className="h-4 w-4 mr-2" />
+              Archiver
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash className="h-4 w-4 mr-2" />
               Supprimer
             </DropdownMenuItem>
           </DropdownMenuContent>

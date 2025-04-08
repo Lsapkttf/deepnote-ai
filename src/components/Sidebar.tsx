@@ -1,9 +1,8 @@
 
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { SquarePen, Mic, ArchiveIcon, Clock, BookOpen, LightbulbIcon } from "lucide-react";
+import { SquarePen, Mic, ArchiveIcon, Clock, BookOpen } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -68,12 +67,6 @@ const Sidebar = ({
               label="Récentes" 
               isActive={selectedCategory === 'recent'} 
               onClick={() => onSelectCategory('recent')}
-            />
-            <SidebarItem 
-              icon={LightbulbIcon} 
-              label="Rappels" 
-              isActive={selectedCategory === 'reminders'} 
-              onClick={() => onSelectCategory('reminders')}
             />
             <SidebarItem 
               icon={ArchiveIcon} 

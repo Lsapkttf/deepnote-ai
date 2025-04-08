@@ -9,9 +9,9 @@ import AIChat from "@/components/AIChat";
 import ApiKeyDialog from "@/components/ApiKeyDialog";
 import { Note, NoteColor } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
-import { Plus, Mic, Settings } from "lucide-react";
+import { Plus, Mic, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { checkApiKey } from "@/services/aiService";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -22,9 +22,12 @@ const Index = () => {
     isRecording,
     chatMessages,
     aiAnalysis,
+    isLoading,
+    fetchNotes,
     addNote,
     updateNote,
     deleteNote,
+    archiveNote,
     setCurrentNote,
     togglePinNote,
     setIsRecording,
@@ -47,6 +50,11 @@ const Index = () => {
     }
   }, []);
 
+  // Charger les notes depuis Supabase
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -65,30 +73,46 @@ const Index = () => {
   const handleSelectCategory = (category: string) => {
     setSelectedCategory(category);
     if (isMobile) setSidebarOpen(false);
+
+    // Recharger les notes si on passe à l'archive
+    if (category === 'archive') {
+      // À implémenter: charger les notes archivées
+    } else {
+      fetchNotes();
+    }
   };
 
-  const handleSaveNote = (title: string, content: string, color: NoteColor) => {
-    addNote(title || "Sans titre", content, "text", color);
-    setView("list");
+  const handleSaveNote = async (title: string, content: string, color: NoteColor) => {
+    try {
+      await addNote(title || "Sans titre", content, "text", color);
+      setView("list");
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde:", error);
+    }
   };
 
-  const handleUpdateNote = (id: string, updates: Partial<Note>) => {
-    updateNote(id, updates);
+  const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
+    await updateNote(id, updates);
   };
 
-  const handleTranscriptionComplete = (transcription: string) => {
-    const newNote = addNote(
-      "Note vocale",
-      "",
-      "voice",
-      "yellow"
-    );
-    
-    updateNote(newNote.id, { transcription });
-    setCurrentNote(newNote);
-    setView("editor");
-    
-    toast.success("Transcription terminée");
+  const handleTranscriptionComplete = async (transcription: string) => {
+    try {
+      const newNote = await addNote(
+        "Note vocale",
+        "",
+        "voice",
+        "yellow"
+      );
+      
+      await updateNote(newNote.id, { transcription });
+      setCurrentNote(newNote);
+      setView("editor");
+      
+      toast.success("Transcription terminée");
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la création de la note vocale");
+    }
   };
 
   const handleNoteClick = (note: Note) => {
@@ -103,6 +127,7 @@ const Index = () => {
   
   const handleBack = () => {
     setView("list");
+    fetchNotes(); // Rafraîchir la liste des notes
   };
   
   const handleStartChat = () => {
@@ -114,9 +139,18 @@ const Index = () => {
     addChatMessage(content, "user");
   };
 
+  const handleArchiveNote = async (id: string) => {
+    await archiveNote(id);
+  };
+
   const filteredNotes = notes.filter(note => {
     if (selectedCategory === "notes") return true;
-    if (selectedCategory === "recent") return true; // On pourrait filtrer par date
+    if (selectedCategory === "recent") {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      return new Date(note.createdAt) >= oneWeekAgo;
+    }
+    // Si on implémente la vue archive, ajouter ici
     return false;
   });
   
@@ -145,7 +179,9 @@ const Index = () => {
             <div className="p-4 h-full flex flex-col overflow-hidden">
               <div className="mb-4 flex justify-between items-center">
                 <h2 className="text-xl font-bold capitalize">
-                  {selectedCategory === "notes" ? "Mes notes" : selectedCategory}
+                  {selectedCategory === "notes" ? "Mes notes" : 
+                   selectedCategory === "recent" ? "Notes récentes" : 
+                   "Archive"}
                 </h2>
                 
                 <div className="flex space-x-2">
@@ -178,7 +214,12 @@ const Index = () => {
               </div>
               
               <div className="flex-1 overflow-auto">
-                {sortedNotes.length === 0 ? (
+                {isLoading ? (
+                  <div className="h-full flex flex-col items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="mt-2 text-muted-foreground">Chargement des notes...</p>
+                  </div>
+                ) : sortedNotes.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                     <p className="mb-4">Aucune note</p>
                     <div className="flex space-x-4">
@@ -201,6 +242,7 @@ const Index = () => {
                         onClick={() => handleNoteClick(note)}
                         onPin={() => togglePinNote(note.id)}
                         onDelete={() => deleteNote(note.id)}
+                        onArchive={() => handleArchiveNote(note.id)}
                       />
                     ))}
                   </div>

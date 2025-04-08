@@ -1,6 +1,6 @@
 
 import { AIAnalysis } from '../types/note';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 // Types pour les réponses API
 interface TranscriptionResponse {
