@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -6,9 +7,10 @@ import NoteEditor from "@/components/NoteEditor";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import AIChat from "@/components/AIChat";
 import ApiKeyDialog from "@/components/ApiKeyDialog";
+import SettingsDialog from "@/components/SettingsDialog";
 import { Note, NoteColor } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
-import { Plus, Mic, Settings, Loader2 } from "lucide-react";
+import { Plus, Mic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { checkApiKey } from "@/services/aiService";
@@ -40,6 +42,8 @@ const Index = () => {
   const [view, setView] = useState<"list" | "editor" | "recorder" | "chat">("list");
   const [selectedCategory, setSelectedCategory] = useState("notes");
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
 
   // Vérifier si la clé API est configurée
@@ -47,6 +51,11 @@ const Index = () => {
     const hasApiKey = checkApiKey();
     if (!hasApiKey) {
       setApiKeyDialogOpen(true);
+    }
+    
+    // Appliquer le mode sombre si configuré
+    if (localStorage.getItem("darkMode") === "true") {
+      document.documentElement.classList.add("dark");
     }
   }, []);
 
@@ -122,37 +131,47 @@ const Index = () => {
     setView("list");
   };
   
-  const handleBack = () => {
-    setView("list");
-    if (selectedCategory === 'archive') {
-      fetchArchivedNotes();
-    } else {
-      fetchNotes();
-    }
-  };
-  
   const handleStartChat = () => {
     clearChatMessages();
     setView("chat");
   };
   
-  const handleSendMessage = (content: string) => {
-    addChatMessage(content, "user");
+  const handleSendMessage = (content: string, role: 'user' | 'assistant') => {
+    addChatMessage(content, role);
   };
 
   const handleArchiveNote = async (id: string) => {
     await archiveNote(id);
   };
+  
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    // Revenir à la liste des notes lors de la recherche
+    if (view !== "list") {
+      setView("list");
+    }
+  };
 
   const filteredNotes = notes.filter(note => {
-    if (selectedCategory === "notes") return true;
+    // Filtre par catégorie
+    if (selectedCategory === "notes" && note.archived) return false;
     if (selectedCategory === "recent") {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      return new Date(note.createdAt) >= oneWeekAgo;
+      return new Date(note.createdAt) >= oneWeekAgo && !note.archived;
     }
-    // Pour la catégorie archive, on n'a pas besoin de filtrer ici car on charge
-    // déjà les notes archivées avec fetchArchivedNotes()
+    if (selectedCategory === "archive" && !note.archived) return false;
+    
+    // Filtre par recherche
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        note.title.toLowerCase().includes(query) || 
+        note.content.toLowerCase().includes(query) ||
+        (note.transcription && note.transcription.toLowerCase().includes(query))
+      );
+    }
+    
     return true;
   });
   
@@ -165,7 +184,11 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <Header toggleSidebar={toggleSidebar} />
+      <Header 
+        toggleSidebar={toggleSidebar} 
+        onSearch={handleSearch}
+        onOpenSettings={() => setSettingsDialogOpen(true)}
+      />
       
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -181,21 +204,13 @@ const Index = () => {
             <div className="p-4 h-full flex flex-col overflow-hidden">
               <div className="mb-4 flex justify-between items-center">
                 <h2 className="text-xl font-bold capitalize">
-                  {selectedCategory === "notes" ? "Mes notes" : 
+                  {searchQuery ? `Résultats pour "${searchQuery}"` :
+                   selectedCategory === "notes" ? "Mes notes" : 
                    selectedCategory === "recent" ? "Notes récentes" : 
                    "Archive"}
                 </h2>
                 
                 <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setApiKeyDialogOpen(true)}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    API
-                  </Button>
-                  
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -224,11 +239,13 @@ const Index = () => {
                 ) : sortedNotes.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                     <p className="mb-4">
-                      {selectedCategory === "archive" 
-                        ? "Aucune note archivée" 
-                        : "Aucune note"}
+                      {searchQuery 
+                        ? "Aucune note ne correspond à votre recherche"
+                        : selectedCategory === "archive" 
+                          ? "Aucune note archivée" 
+                          : "Aucune note"}
                     </p>
-                    {selectedCategory !== "archive" && (
+                    {(selectedCategory !== "archive" && !searchQuery) && (
                       <div className="flex space-x-4">
                         <Button onClick={handleNewTextNote}>
                           <Plus className="h-4 w-4 mr-2" />
@@ -259,24 +276,12 @@ const Index = () => {
             </div>
           )}
           
-          {view === "editor" && currentNote && (
+          {view === "editor" && (
             <NoteEditor
               note={currentNote}
               onSave={handleSaveNote}
               onUpdate={handleUpdateNote}
-              onBack={handleBack}
-              aiAnalysis={aiAnalysis}
-              setAIAnalysis={setAIAnalysis}
-              onStartChat={handleStartChat}
-            />
-          )}
-          
-          {view === "editor" && !currentNote && (
-            <NoteEditor
-              note={null}
-              onSave={handleSaveNote}
-              onUpdate={handleUpdateNote}
-              onBack={handleBack}
+              onBack={() => setView("list")}
               aiAnalysis={aiAnalysis}
               setAIAnalysis={setAIAnalysis}
               onStartChat={handleStartChat}
@@ -297,7 +302,7 @@ const Index = () => {
               noteContent={currentNote.type === 'voice' && currentNote.transcription 
                 ? currentNote.transcription 
                 : currentNote.content}
-              onBack={handleBack}
+              onBack={() => setView("editor")}
             />
           )}
         </main>
@@ -306,6 +311,11 @@ const Index = () => {
       <ApiKeyDialog 
         open={apiKeyDialogOpen} 
         onOpenChange={setApiKeyDialogOpen} 
+      />
+      
+      <SettingsDialog
+        open={settingsDialogOpen}
+        onOpenChange={setSettingsDialogOpen}
       />
     </div>
   );

@@ -38,6 +38,7 @@ export const checkApiKey = (): boolean => {
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   const apiKey = getHuggingFaceApiKey();
   if (!apiKey) {
+    toast.error("Clé API Hugging Face manquante");
     throw new Error("Clé API Hugging Face manquante");
   }
 
@@ -57,7 +58,9 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     );
 
     if (!response.ok) {
-      throw new Error(`Erreur lors de la transcription: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("Erreur API:", errorText);
+      throw new Error(`Erreur lors de la transcription: ${response.status} ${response.statusText}`);
     }
 
     const result: TranscriptionResponse = await response.json();
@@ -73,10 +76,13 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   const apiKey = getHuggingFaceApiKey();
   if (!apiKey) {
+    toast.error("Clé API Hugging Face manquante");
     throw new Error("Clé API Hugging Face manquante");
   }
 
   try {
+    console.log("Démarrage de l'analyse avec le texte:", text.substring(0, 100) + "...");
+    
     const response = await fetch(
       'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
       {
@@ -101,20 +107,23 @@ Note: ${text} [/INST]</s>`,
     );
 
     if (!response.ok) {
-      throw new Error(`Erreur lors de l'analyse: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("Erreur API:", errorText);
+      throw new Error(`Erreur lors de l'analyse: ${response.status} ${response.statusText}`);
     }
 
     const result: ChatResponse = await response.json();
+    console.log("Réponse brute reçue:", result);
     
     // Parse la réponse générée
     const parsedResponse = parseAIResponse(result.generated_text);
     return parsedResponse;
   } catch (error) {
-    console.error("Erreur d'analyse:", error);
+    console.error("Erreur d'analyse détaillée:", error);
     toast.error("Erreur lors de l'analyse du texte");
     return {
       summary: "Impossible d'analyser le texte",
-      keyPoints: ["Erreur d'analyse"],
+      keyPoints: ["Erreur d'analyse", "Vérifiez que votre clé API est valide", "Assurez-vous que le texte n'est pas vide"],
       sentiment: "neutre"
     };
   }
@@ -122,6 +131,8 @@ Note: ${text} [/INST]</s>`,
 
 // Fonction auxiliaire pour extraire les informations de la réponse de l'IA
 const parseAIResponse = (text: string): AIAnalysis => {
+  console.log("Texte à parser:", text);
+  
   // Extraction basique à partir de la réponse
   const summaryMatch = text.match(/résumé.*?:(.*?)(?:\n\n|\n\d|$)/is);
   const keyPointsMatch = text.match(/points clés.*?:(.*?)(?:\n\n|\n\d|$)/is);
@@ -155,6 +166,8 @@ const parseAIResponse = (text: string): AIAnalysis => {
         : "neutre" 
     : "neutre";
   
+  console.log("Analyse parsée:", { summary, keyPoints: keyPoints.length, sentiment });
+  
   return {
     summary,
     keyPoints,
@@ -166,10 +179,14 @@ const parseAIResponse = (text: string): AIAnalysis => {
 export const chatWithAI = async (message: string, context: string): Promise<string> => {
   const apiKey = getHuggingFaceApiKey();
   if (!apiKey) {
+    toast.error("Clé API Hugging Face manquante");
     throw new Error("Clé API Hugging Face manquante");
   }
 
   try {
+    console.log("Envoi de message au chat IA:", message);
+    console.log("Contexte fourni:", context.substring(0, 100) + "...");
+    
     const response = await fetch(
       'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
       {
@@ -193,14 +210,17 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
     );
 
     if (!response.ok) {
-      throw new Error(`Erreur lors de la conversation: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("Erreur API:", errorText);
+      throw new Error(`Erreur lors de la conversation: ${response.status} ${response.statusText}`);
     }
 
     const result: ChatResponse = await response.json();
+    console.log("Réponse du chat reçue");
     return result.generated_text;
   } catch (error) {
     console.error("Erreur de conversation:", error);
     toast.error("Erreur lors de la conversation avec l'IA");
-    return "Désolé, je n'ai pas pu traiter votre demande en raison d'une erreur technique.";
+    return "Désolé, je n'ai pas pu traiter votre demande en raison d'une erreur technique. Veuillez vérifier votre clé API et réessayer.";
   }
 };

@@ -29,3 +29,9 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
 }
+
+export interface AppSettings {
+  apiKey: string;
+  darkMode: boolean;
+  language: 'fr' | 'en';
+}

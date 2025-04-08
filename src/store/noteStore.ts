@@ -39,6 +39,7 @@ const useNoteStore = create<NoteState>((set, get) => ({
   fetchNotes: async () => {
     set({ isLoading: true });
     try {
+      console.log("Chargement des notes...");
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -50,6 +51,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
         console.error("Erreur lors du chargement des notes:", error);
         return;
       }
+      
+      console.log(`${data?.length || 0} notes chargées`);
       
       // Conversion des dates pour chaque note
       const notesWithDates = data ? data.map(note => ({
@@ -77,6 +80,7 @@ const useNoteStore = create<NoteState>((set, get) => ({
   fetchArchivedNotes: async () => {
     set({ isLoading: true });
     try {
+      console.log("Chargement des notes archivées...");
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -88,6 +92,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
         console.error("Erreur lors du chargement des notes archivées:", error);
         return;
       }
+      
+      console.log(`${data?.length || 0} notes archivées chargées`);
       
       // Conversion des dates pour chaque note
       const notesWithDates = data ? data.map(note => ({
@@ -114,6 +120,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
   
   addNote: async (title, content, type, color = 'yellow', audioUrl) => {
     try {
+      console.log("Création d'une nouvelle note:", { title, type, color });
+      
       const newNoteData = {
         title,
         content,
@@ -138,6 +146,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
       if (!data) {
         throw new Error("Aucune donnée retournée après l'insertion");
       }
+      
+      console.log("Note créée avec succès:", data.id);
       
       // Conversion des dates
       const noteWithDates: Note = {
@@ -169,13 +179,14 @@ const useNoteStore = create<NoteState>((set, get) => ({
   
   updateNote: async (id, updates) => {
     try {
+      console.log("Mise à jour de la note:", id, updates);
+      
       // Conversion du format des données pour Supabase
       const supabaseUpdates: any = { ...updates };
       
       // Convertir les noms de propriétés dans le format attendu par Supabase
       if (updates.createdAt) supabaseUpdates.created_at = updates.createdAt;
       if (updates.updatedAt) supabaseUpdates.updated_at = updates.updatedAt;
-      if (updates.archived !== undefined) supabaseUpdates.archived = updates.archived;
       
       // Supprimer les propriétés qui ne sont pas présentes dans la table Supabase
       delete supabaseUpdates.createdAt;
@@ -194,6 +205,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
         console.error("Erreur lors de la mise à jour de la note:", error);
         return;
       }
+      
+      console.log("Note mise à jour avec succès");
       
       set((state) => ({
         notes: state.notes.map(note => 
@@ -215,6 +228,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
   
   deleteNote: async (id) => {
     try {
+      console.log("Suppression de la note:", id);
+      
       const { error } = await supabase
         .from('notes')
         .delete()
@@ -225,6 +240,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
         console.error("Erreur lors de la suppression de la note:", error);
         return;
       }
+      
+      console.log("Note supprimée avec succès");
       
       set((state) => ({
         notes: state.notes.filter(note => note.id !== id),
@@ -239,6 +256,7 @@ const useNoteStore = create<NoteState>((set, get) => ({
   },
   
   setCurrentNote: (note) => {
+    console.log("Note actuelle définie:", note?.id);
     set(() => ({ currentNote: note, chatMessages: [] }));
   },
   
@@ -247,6 +265,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
     if (!note) return;
     
     try {
+      console.log(`${note.pinned ? "Désépinglage" : "Épinglage"} de la note:`, id);
+      
       const { error } = await supabase
         .from('notes')
         .update({ pinned: !note.pinned })
@@ -257,6 +277,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
         console.error("Erreur lors de l'épinglage de la note:", error);
         return;
       }
+      
+      console.log(`Note ${note.pinned ? "désépinglée" : "épinglée"} avec succès`);
       
       set((state) => ({
         notes: state.notes.map(note => 
@@ -276,6 +298,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
   
   archiveNote: async (id) => {
     try {
+      console.log("Archivage de la note:", id);
+      
       const { error } = await supabase
         .from('notes')
         .update({ archived: true })
@@ -286,6 +310,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
         console.error("Erreur lors de l'archivage de la note:", error);
         return;
       }
+      
+      console.log("Note archivée avec succès");
       
       set((state) => ({
         notes: state.notes.filter(note => note.id !== id),
@@ -304,6 +330,8 @@ const useNoteStore = create<NoteState>((set, get) => ({
   },
   
   addChatMessage: (content, role) => {
+    console.log("Ajout d'un message au chat:", { role, contentLength: content.length });
+    
     const newMessage: ChatMessage = {
       id: uuidv4(),
       content,
@@ -317,10 +345,12 @@ const useNoteStore = create<NoteState>((set, get) => ({
   },
   
   setAIAnalysis: (analysis) => {
+    console.log("Définition de l'analyse IA:", analysis ? "présent" : "nulle");
     set(() => ({ aiAnalysis: analysis }));
   },
   
   clearChatMessages: () => {
+    console.log("Effacement des messages du chat");
     set(() => ({ chatMessages: [] }));
   }
 }));

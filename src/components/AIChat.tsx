@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { ChatMessage } from "@/types/note";
 import { Send, ArrowLeft } from "lucide-react";
 import { chatWithAI } from "@/services/aiService";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 interface AIChatProps {
   messages: ChatMessage[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, role: 'user' | 'assistant') => void;
   noteContent: string;
   onBack: () => void;
 }
@@ -34,16 +34,19 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
     setInput("");
     
     // Envoyer le message de l'utilisateur
-    onSendMessage(userMessage);
+    onSendMessage(userMessage, 'user');
     
     // Traiter la réponse de l'IA
     setIsLoading(true);
     try {
+      console.log("Envoi de la demande à l'IA...");
       const response = await chatWithAI(userMessage, noteContent);
-      onSendMessage(response);
+      console.log("Réponse reçue de l'IA:", response ? response.substring(0, 50) + "..." : "aucune réponse");
+      onSendMessage(response, 'assistant');
     } catch (error) {
       console.error("Erreur de chat:", error);
       toast.error("Erreur lors de la conversation avec l'IA");
+      onSendMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez vérifier votre clé API et réessayer.", 'assistant');
     } finally {
       setIsLoading(false);
     }
