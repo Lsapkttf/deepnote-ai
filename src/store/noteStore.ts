@@ -11,7 +11,7 @@ interface NoteState {
   aiAnalysis: AIAnalysis | null;
   
   // Actions
-  addNote: (title: string, content: string, type: 'text' | 'voice', color?: NoteColor, audioUrl?: string) => void;
+  addNote: (title: string, content: string, type: 'text' | 'voice', color?: NoteColor, audioUrl?: string) => Note;
   updateNote: (id: string, updates: Partial<Note>) => void;
   deleteNote: (id: string) => void;
   setCurrentNote: (note: Note | null) => void;
@@ -22,7 +22,7 @@ interface NoteState {
   clearChatMessages: () => void;
 }
 
-const useNoteStore = create<NoteState>((set) => ({
+const useNoteStore = create<NoteState>((set, get) => ({
   notes: [],
   currentNote: null,
   isRecording: false,

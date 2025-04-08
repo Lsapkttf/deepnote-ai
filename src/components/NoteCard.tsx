@@ -1,7 +1,7 @@
 
 import { Note } from "@/types/note";
 import { cn } from "@/lib/utils";
-import { MoreHorizontal, Pin } from "lucide-react";
+import { MoreHorizontal, Pin, Mic } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
