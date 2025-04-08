@@ -15,6 +15,7 @@ interface NoteState {
   
   // Actions
   fetchNotes: () => Promise<void>;
+  fetchArchivedNotes: () => Promise<void>;
   addNote: (title: string, content: string, type: 'text' | 'voice', color?: NoteColor, audioUrl?: string) => Promise<Note>;
   updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
@@ -68,6 +69,44 @@ const useNoteStore = create<NoteState>((set, get) => ({
     } catch (error) {
       console.error("Erreur:", error);
       toast.error("Erreur lors du chargement des notes");
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchArchivedNotes: async () => {
+    set({ isLoading: true });
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('archived', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        toast.error("Erreur lors du chargement des notes archivées");
+        console.error("Erreur lors du chargement des notes archivées:", error);
+        return;
+      }
+      
+      // Conversion des dates pour chaque note
+      const notesWithDates = data ? data.map(note => ({
+        id: note.id,
+        title: note.title,
+        content: note.content || "",
+        transcription: note.transcription || undefined,
+        type: note.type as 'text' | 'voice',
+        color: note.color as NoteColor,
+        pinned: note.pinned || false,
+        archived: note.archived || false,
+        createdAt: new Date(note.created_at),
+        updatedAt: new Date(note.updated_at)
+      })) : [];
+      
+      set({ notes: notesWithDates });
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors du chargement des notes archivées");
     } finally {
       set({ isLoading: false });
     }
@@ -136,6 +175,7 @@ const useNoteStore = create<NoteState>((set, get) => ({
       // Convertir les noms de propriétés dans le format attendu par Supabase
       if (updates.createdAt) supabaseUpdates.created_at = updates.createdAt;
       if (updates.updatedAt) supabaseUpdates.updated_at = updates.updatedAt;
+      if (updates.archived !== undefined) supabaseUpdates.archived = updates.archived;
       
       // Supprimer les propriétés qui ne sont pas présentes dans la table Supabase
       delete supabaseUpdates.createdAt;

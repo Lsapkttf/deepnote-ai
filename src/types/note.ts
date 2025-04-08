@@ -14,6 +14,7 @@ export interface Note {
   createdAt: Date;
   updatedAt: Date;
   pinned: boolean;
+  archived: boolean;
 }
 
 export interface AIAnalysis {

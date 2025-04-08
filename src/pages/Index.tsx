@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -24,6 +23,7 @@ const Index = () => {
     aiAnalysis,
     isLoading,
     fetchNotes,
+    fetchArchivedNotes,
     addNote,
     updateNote,
     deleteNote,
@@ -52,8 +52,12 @@ const Index = () => {
 
   // Charger les notes depuis Supabase
   useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+    if (selectedCategory === 'archive') {
+      fetchArchivedNotes();
+    } else {
+      fetchNotes();
+    }
+  }, [fetchNotes, fetchArchivedNotes, selectedCategory]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -73,13 +77,6 @@ const Index = () => {
   const handleSelectCategory = (category: string) => {
     setSelectedCategory(category);
     if (isMobile) setSidebarOpen(false);
-
-    // Recharger les notes si on passe à l'archive
-    if (category === 'archive') {
-      // À implémenter: charger les notes archivées
-    } else {
-      fetchNotes();
-    }
   };
 
   const handleSaveNote = async (title: string, content: string, color: NoteColor) => {
@@ -127,7 +124,11 @@ const Index = () => {
   
   const handleBack = () => {
     setView("list");
-    fetchNotes(); // Rafraîchir la liste des notes
+    if (selectedCategory === 'archive') {
+      fetchArchivedNotes();
+    } else {
+      fetchNotes();
+    }
   };
   
   const handleStartChat = () => {
@@ -150,8 +151,9 @@ const Index = () => {
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       return new Date(note.createdAt) >= oneWeekAgo;
     }
-    // Si on implémente la vue archive, ajouter ici
-    return false;
+    // Pour la catégorie archive, on n'a pas besoin de filtrer ici car on charge
+    // déjà les notes archivées avec fetchArchivedNotes()
+    return true;
   });
   
   // Trier les notes pour afficher les épinglées en premier
@@ -221,17 +223,23 @@ const Index = () => {
                   </div>
                 ) : sortedNotes.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                    <p className="mb-4">Aucune note</p>
-                    <div className="flex space-x-4">
-                      <Button onClick={handleNewTextNote}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nouvelle note
-                      </Button>
-                      <Button variant="outline" onClick={handleNewVoiceNote}>
-                        <Mic className="h-4 w-4 mr-2" />
-                        Note vocale
-                      </Button>
-                    </div>
+                    <p className="mb-4">
+                      {selectedCategory === "archive" 
+                        ? "Aucune note archivée" 
+                        : "Aucune note"}
+                    </p>
+                    {selectedCategory !== "archive" && (
+                      <div className="flex space-x-4">
+                        <Button onClick={handleNewTextNote}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nouvelle note
+                        </Button>
+                        <Button variant="outline" onClick={handleNewVoiceNote}>
+                          <Mic className="h-4 w-4 mr-2" />
+                          Note vocale
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
