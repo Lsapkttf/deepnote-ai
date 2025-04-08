@@ -42,7 +42,12 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
       console.log("Envoi de la demande à l'IA...");
       const response = await chatWithAI(userMessage, noteContent);
       console.log("Réponse reçue de l'IA:", response ? response.substring(0, 50) + "..." : "aucune réponse");
-      onSendMessage(response, 'assistant');
+      
+      if (response) {
+        onSendMessage(response, 'assistant');
+      } else {
+        throw new Error("Réponse vide du modèle IA");
+      }
     } catch (error) {
       console.error("Erreur de chat:", error);
       toast.error("Erreur lors de la conversation avec l'IA");

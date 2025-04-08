@@ -8,7 +8,12 @@ interface TranscriptionResponse {
 }
 
 interface ChatResponse {
-  generated_text: string;
+  choices: [{
+    message: {
+      content: string;
+    }
+  }];
+  generated_text?: string;
 }
 
 // Clé API (à remplacer par l'utilisateur)
@@ -112,11 +117,25 @@ Note: ${text} [/INST]</s>`,
       throw new Error(`Erreur lors de l'analyse: ${response.status} ${response.statusText}`);
     }
 
-    const result: ChatResponse = await response.json();
+    const result = await response.json();
     console.log("Réponse brute reçue:", result);
     
+    // Extraction du texte généré
+    let generatedText = "";
+    if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
+      generatedText = result[0].generated_text;
+    } else if (result.generated_text) {
+      generatedText = result.generated_text;
+    } else if (result.choices && result.choices.length > 0) {
+      generatedText = result.choices[0].message.content;
+    } else {
+      throw new Error("Format de réponse inattendu");
+    }
+    
+    console.log("Texte à parser:", generatedText);
+    
     // Parse la réponse générée
-    const parsedResponse = parseAIResponse(result.generated_text);
+    const parsedResponse = parseAIResponse(generatedText);
     return parsedResponse;
   } catch (error) {
     console.error("Erreur d'analyse détaillée:", error);
@@ -131,14 +150,24 @@ Note: ${text} [/INST]</s>`,
 
 // Fonction auxiliaire pour extraire les informations de la réponse de l'IA
 const parseAIResponse = (text: string): AIAnalysis => {
-  console.log("Texte à parser:", text);
+  if (!text) {
+    return {
+      summary: "Pas de texte à analyser",
+      keyPoints: ["Erreur: réponse vide"],
+      sentiment: "neutre"
+    };
+  }
+  
+  console.log("Texte à parser (longueur):", text.length);
   
   // Extraction basique à partir de la réponse
   const summaryMatch = text.match(/résumé.*?:(.*?)(?:\n\n|\n\d|$)/is);
   const keyPointsMatch = text.match(/points clés.*?:(.*?)(?:\n\n|\n\d|$)/is);
   const sentimentMatch = text.match(/sentiment.*?:(.*?)(?:\n\n|$)/is);
   
-  const summary = summaryMatch ? summaryMatch[1].trim() : "Pas de résumé disponible";
+  const summary = summaryMatch && summaryMatch[1] 
+    ? summaryMatch[1].trim() 
+    : "Pas de résumé disponible";
   
   // Extraire les points clés
   let keyPoints: string[] = [];
@@ -215,9 +244,22 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
       throw new Error(`Erreur lors de la conversation: ${response.status} ${response.statusText}`);
     }
 
-    const result: ChatResponse = await response.json();
-    console.log("Réponse du chat reçue");
-    return result.generated_text;
+    const result = await response.json();
+    console.log("Réponse du chat reçue:", result);
+    
+    // Extraction du texte généré en fonction du format de réponse
+    let responseText = "";
+    if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
+      responseText = result[0].generated_text;
+    } else if (result.generated_text) {
+      responseText = result.generated_text;
+    } else if (result.choices && result.choices.length > 0) {
+      responseText = result.choices[0].message.content;
+    } else {
+      throw new Error("Format de réponse inattendu");
+    }
+    
+    return responseText;
   } catch (error) {
     console.error("Erreur de conversation:", error);
     toast.error("Erreur lors de la conversation avec l'IA");
