@@ -33,7 +33,7 @@ const Sidebar = ({
         <div className="flex flex-col space-y-2">
           <Button
             variant="default"
-            className="justify-start bg-primary text-primary-foreground hover:bg-primary/90"
+            className="justify-start bg-primary text-primary-foreground hover:bg-primary/90 w-full"
             onClick={onNewTextNote}
           >
             <SquarePen className="h-4 w-4 mr-2" />
@@ -42,7 +42,7 @@ const Sidebar = ({
           
           <Button
             variant="outline"
-            className="justify-start"
+            className="justify-start w-full"
             onClick={onNewVoiceNote}
           >
             <Mic className="h-4 w-4 mr-2" />
@@ -55,6 +55,7 @@ const Sidebar = ({
       
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
+          <h2 className="mb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégories</h2>
           <nav className="space-y-1">
             <SidebarItem 
               icon={BookOpen} 

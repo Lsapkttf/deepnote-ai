@@ -51,11 +51,18 @@ const useNoteStore = create<NoteState>((set, get) => ({
       }
       
       // Conversion des dates pour chaque note
-      const notesWithDates = data.map(note => ({
-        ...note,
+      const notesWithDates = data ? data.map(note => ({
+        id: note.id,
+        title: note.title,
+        content: note.content || "",
+        transcription: note.transcription || undefined,
+        type: note.type as 'text' | 'voice',
+        color: note.color as NoteColor,
+        pinned: note.pinned || false,
+        archived: note.archived || false,
         createdAt: new Date(note.created_at),
-        updatedAt: new Date(note.updated_at),
-      }));
+        updatedAt: new Date(note.updated_at)
+      })) : [];
       
       set({ notes: notesWithDates });
     } catch (error) {
@@ -68,26 +75,18 @@ const useNoteStore = create<NoteState>((set, get) => ({
   
   addNote: async (title, content, type, color = 'yellow', audioUrl) => {
     try {
-      const newNote = {
+      const newNoteData = {
         title,
         content,
         type,
         color,
-        audioUrl,
         pinned: false,
         archived: false
       };
       
       const { data, error } = await supabase
         .from('notes')
-        .insert([{
-          title: newNote.title,
-          content: newNote.content,
-          type: newNote.type,
-          color: newNote.color,
-          pinned: newNote.pinned,
-          archived: newNote.archived
-        }])
+        .insert([newNoteData])
         .select()
         .single();
       
@@ -97,9 +96,20 @@ const useNoteStore = create<NoteState>((set, get) => ({
         throw error;
       }
       
+      if (!data) {
+        throw new Error("Aucune donnée retournée après l'insertion");
+      }
+      
       // Conversion des dates
-      const noteWithDates = {
-        ...data,
+      const noteWithDates: Note = {
+        id: data.id,
+        title: data.title,
+        content: data.content || "",
+        transcription: data.transcription || undefined,
+        type: data.type as 'text' | 'voice',
+        color: data.color as NoteColor,
+        pinned: !!data.pinned,
+        archived: !!data.archived,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
@@ -120,10 +130,21 @@ const useNoteStore = create<NoteState>((set, get) => ({
   
   updateNote: async (id, updates) => {
     try {
+      // Conversion du format des données pour Supabase
+      const supabaseUpdates: any = { ...updates };
+      
+      // Convertir les noms de propriétés dans le format attendu par Supabase
+      if (updates.createdAt) supabaseUpdates.created_at = updates.createdAt;
+      if (updates.updatedAt) supabaseUpdates.updated_at = updates.updatedAt;
+      
+      // Supprimer les propriétés qui ne sont pas présentes dans la table Supabase
+      delete supabaseUpdates.createdAt;
+      delete supabaseUpdates.updatedAt;
+      
       const { error } = await supabase
         .from('notes')
         .update({
-          ...updates,
+          ...supabaseUpdates,
           updated_at: new Date()
         })
         .eq('id', id);

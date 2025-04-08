@@ -31,8 +31,9 @@ const NoteCard = ({ note, onClick, onPin, onDelete, onArchive }: NoteCardProps) 
   return (
     <div 
       className={cn(
-        "note-card cursor-pointer relative",
-        `note-card-${note.color}`
+        "note-card group relative rounded-lg p-4 shadow-sm transition-all hover:shadow-md",
+        `bg-note-${note.color}`,
+        note.pinned && "ring-2 ring-primary"
       )}
       onClick={onClick}
     >
@@ -43,11 +44,11 @@ const NoteCard = ({ note, onClick, onPin, onDelete, onArchive }: NoteCardProps) 
       )}
       
       <div className="flex justify-between items-start">
-        <h3 className="font-medium">{note.title || "Sans titre"}</h3>
+        <h3 className="font-medium text-lg truncate">{note.title || "Sans titre"}</h3>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -70,21 +71,23 @@ const NoteCard = ({ note, onClick, onPin, onDelete, onArchive }: NoteCardProps) 
         </DropdownMenu>
       </div>
       
-      <div className="mt-2 text-sm line-clamp-3">{getPreviewText()}</div>
+      <div className="mt-2 text-sm line-clamp-3 min-h-[3rem]">{getPreviewText()}</div>
       
-      <div className="mt-3 text-xs text-muted-foreground">
-        {formatDistanceToNow(new Date(note.createdAt), { 
-          addSuffix: true,
-          locale: fr
-        })}
+      <div className="mt-3 text-xs text-muted-foreground flex justify-between items-center">
+        <span>
+          {formatDistanceToNow(new Date(note.createdAt), { 
+            addSuffix: true,
+            locale: fr
+          })}
+        </span>
+        
+        {note.type === 'voice' && (
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Mic className="h-3 w-3 mr-1" />
+            <span>Note vocale</span>
+          </div>
+        )}
       </div>
-      
-      {note.type === 'voice' && (
-        <div className="mt-2 text-xs flex items-center text-muted-foreground">
-          <Mic className="h-3 w-3 mr-1" />
-          <span>Note vocale</span>
-        </div>
-      )}
     </div>
   );
 };
