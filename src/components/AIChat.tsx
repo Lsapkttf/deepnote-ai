@@ -40,18 +40,30 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
     setIsLoading(true);
     try {
       console.log("Envoi de la demande à l'IA...");
-      const response = await chatWithAI(userMessage, noteContent);
-      console.log("Réponse reçue de l'IA:", response ? response.substring(0, 50) + "..." : "aucune réponse");
+      console.log("Contenu de la note envoyé:", noteContent.substring(0, 100) + "...");
       
-      if (response) {
-        onSendMessage(response, 'assistant');
+      const response = await chatWithAI(userMessage, noteContent);
+      console.log("Réponse complète reçue de l'IA:", response);
+      
+      if (response && response.trim()) {
+        // Traiter la réponse pour supprimer les balises d'instructions si présentes
+        let cleanResponse = response;
+        const instPattern = /<s>\[INST\](.*?)\[\/INST\]<\/s>/s;
+        const match = response.match(instPattern);
+        
+        if (match) {
+          // Si le format contient des balises d'instruction, extraire la partie pertinente
+          cleanResponse = response.replace(instPattern, '').trim();
+        }
+        
+        onSendMessage(cleanResponse, 'assistant');
       } else {
-        throw new Error("Réponse vide du modèle IA");
+        throw new Error("Réponse vide ou invalide du modèle IA");
       }
     } catch (error) {
-      console.error("Erreur de chat:", error);
+      console.error("Erreur complète de chat:", error);
       toast.error("Erreur lors de la conversation avec l'IA");
-      onSendMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez vérifier votre clé API et réessayer.", 'assistant');
+      onSendMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez vérifier votre clé API et réessayer. Si le problème persiste, essayez de reformuler votre question.", 'assistant');
     } finally {
       setIsLoading(false);
     }

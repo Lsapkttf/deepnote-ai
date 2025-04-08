@@ -85,8 +85,22 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
     throw new Error("Clé API Hugging Face manquante");
   }
 
+  if (!text || text.trim().length === 0) {
+    toast.error("Aucun texte à analyser");
+    throw new Error("Aucun texte à analyser");
+  }
+
   try {
     console.log("Démarrage de l'analyse avec le texte:", text.substring(0, 100) + "...");
+    
+    const prompt = `<s>[INST] Voici une note ou transcription. Je voudrais que tu me fournisses:
+1. Un résumé bref (2-3 phrases)
+2. Les points clés (liste de 3-5 points)
+3. Le sentiment général exprimé (positif, négatif ou neutre)
+
+Note: ${text} [/INST]</s>`;
+
+    console.log("Prompt complet d'analyse:", prompt.substring(0, 150) + "...");
     
     const response = await fetch(
       'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
@@ -97,28 +111,26 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: `<s>[INST] Voici une note ou transcription. Je voudrais que tu me fournisses:
-1. Un résumé bref (2-3 phrases)
-2. Les points clés (liste de 3-5 points)
-3. Le sentiment général exprimé (positif, négatif ou neutre)
-
-Note: ${text} [/INST]</s>`,
+          inputs: prompt,
           parameters: {
             max_new_tokens: 512,
             temperature: 0.7,
+            return_full_text: false
           },
         }),
       }
     );
 
+    console.log("Statut de la réponse:", response.status);
+    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Erreur API:", errorText);
+      console.error("Erreur API détaillée:", errorText);
       throw new Error(`Erreur lors de l'analyse: ${response.status} ${response.statusText}`);
     }
 
     const result = await response.json();
-    console.log("Réponse brute reçue:", result);
+    console.log("Réponse brute reçue:", JSON.stringify(result).substring(0, 200) + "...");
     
     // Extraction du texte généré
     let generatedText = "";
@@ -129,13 +141,15 @@ Note: ${text} [/INST]</s>`,
     } else if (result.choices && result.choices.length > 0) {
       generatedText = result.choices[0].message.content;
     } else {
-      throw new Error("Format de réponse inattendu");
+      console.error("Format de réponse inattendu:", result);
+      throw new Error("Format de réponse inattendu de l'API");
     }
     
-    console.log("Texte à parser:", generatedText);
+    console.log("Texte généré extrait:", generatedText.substring(0, 150) + "...");
     
     // Parse la réponse générée
     const parsedResponse = parseAIResponse(generatedText);
+    console.log("Analyse parsée:", parsedResponse);
     return parsedResponse;
   } catch (error) {
     console.error("Erreur d'analyse détaillée:", error);
@@ -165,8 +179,13 @@ const parseAIResponse = (text: string): AIAnalysis => {
   const keyPointsMatch = text.match(/points clés.*?:(.*?)(?:\n\n|\n\d|$)/is);
   const sentimentMatch = text.match(/sentiment.*?:(.*?)(?:\n\n|$)/is);
   
+  // Tentative d'extraction sans les marqueurs spécifiques si les regex précédentes échouent
+  const fallbackSummaryMatch = !summaryMatch && text.match(/^(.*?)(?:\n\n|\n\d|$)/s);
+  
   const summary = summaryMatch && summaryMatch[1] 
     ? summaryMatch[1].trim() 
+    : fallbackSummaryMatch && fallbackSummaryMatch[1]
+    ? fallbackSummaryMatch[1].trim()
     : "Pas de résumé disponible";
   
   // Extraire les points clés
@@ -184,16 +203,36 @@ const parseAIResponse = (text: string): AIAnalysis => {
       keyPoints = [keyPointsText];
     }
   } else {
-    keyPoints = ["Pas de points clés disponibles"];
+    // Tentative d'extraction de points clés sans marqueur spécifique
+    const lines = text.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && line.match(/^[•\-*]|^\d+\./));
+    
+    if (lines.length > 0) {
+      keyPoints = lines.map(line => line.replace(/^[•\-*]|^\d+\./, '').trim());
+    } else {
+      keyPoints = ["Pas de points clés disponibles"];
+    }
   }
   
-  const sentiment = sentimentMatch 
-    ? sentimentMatch[1].trim().toLowerCase().includes("positif") 
-      ? "positif" 
-      : sentimentMatch[1].trim().toLowerCase().includes("négatif") 
-        ? "négatif" 
-        : "neutre" 
-    : "neutre";
+  // Déterminer le sentiment
+  let sentiment = "neutre";
+  if (sentimentMatch && sentimentMatch[1]) {
+    const sentimentText = sentimentMatch[1].trim().toLowerCase();
+    if (sentimentText.includes("positif")) {
+      sentiment = "positif";
+    } else if (sentimentText.includes("négatif")) {
+      sentiment = "négatif";
+    }
+  } else {
+    // Recherche de mots-clés de sentiment dans tout le texte
+    const fullText = text.toLowerCase();
+    if (fullText.includes("positif") && !fullText.includes("négatif")) {
+      sentiment = "positif";
+    } else if (fullText.includes("négatif") && !fullText.includes("positif")) {
+      sentiment = "négatif";
+    }
+  }
   
   console.log("Analyse parsée:", { summary, keyPoints: keyPoints.length, sentiment });
   
@@ -216,6 +255,20 @@ export const chatWithAI = async (message: string, context: string): Promise<stri
     console.log("Envoi de message au chat IA:", message);
     console.log("Contexte fourni:", context.substring(0, 100) + "...");
     
+    // Limiter la taille du contexte si nécessaire
+    const maxContextLength = 2000;
+    const trimmedContext = context.length > maxContextLength 
+      ? context.substring(0, maxContextLength) + "..." 
+      : context;
+    
+    const prompt = `<s>[INST] Contexte: ${trimmedContext}
+
+Question de l'utilisateur: ${message}
+
+Réponds à cette question en te basant sur le contexte fourni. Si la réponse n'est pas dans le contexte, dis-le poliment. [/INST]</s>`;
+
+    console.log("Prompt complet:", prompt.substring(0, 150) + "...");
+    
     const response = await fetch(
       'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
       {
@@ -225,19 +278,18 @@ export const chatWithAI = async (message: string, context: string): Promise<stri
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: `<s>[INST] Contexte: ${context}
-
-Question de l'utilisateur: ${message}
-
-Réponds à cette question en te basant sur le contexte fourni. Si la réponse n'est pas dans le contexte, dis-le poliment. [/INST]</s>`,
+          inputs: prompt,
           parameters: {
             max_new_tokens: 512,
             temperature: 0.7,
+            return_full_text: false
           },
         }),
       }
     );
 
+    console.log("Statut de la réponse:", response.status);
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Erreur API:", errorText);
@@ -245,7 +297,7 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
     }
 
     const result = await response.json();
-    console.log("Réponse du chat reçue:", result);
+    console.log("Réponse du chat reçue:", JSON.stringify(result).substring(0, 200) + "...");
     
     // Extraction du texte généré en fonction du format de réponse
     let responseText = "";
@@ -256,9 +308,11 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
     } else if (result.choices && result.choices.length > 0) {
       responseText = result.choices[0].message.content;
     } else {
+      console.error("Format de réponse inattendu:", result);
       throw new Error("Format de réponse inattendu");
     }
     
+    console.log("Texte de réponse extrait:", responseText.substring(0, 150) + "...");
     return responseText;
   } catch (error) {
     console.error("Erreur de conversation:", error);
