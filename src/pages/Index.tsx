@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -6,7 +5,6 @@ import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import AIChat from "@/components/AIChat";
-import ApiKeyDialog from "@/components/ApiKeyDialog";
 import SettingsDialog from "@/components/SettingsDialog";
 import { Note, NoteColor } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
@@ -41,7 +39,6 @@ const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [view, setView] = useState<"list" | "editor" | "recorder" | "chat">("list");
   const [selectedCategory, setSelectedCategory] = useState("notes");
-  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
@@ -50,7 +47,7 @@ const Index = () => {
   useEffect(() => {
     const hasApiKey = checkApiKey();
     if (!hasApiKey) {
-      setApiKeyDialogOpen(true);
+      setSettingsDialogOpen(true);
     }
     
     // Appliquer le mode sombre si configuré
@@ -307,11 +304,6 @@ const Index = () => {
           )}
         </main>
       </div>
-      
-      <ApiKeyDialog 
-        open={apiKeyDialogOpen} 
-        onOpenChange={setApiKeyDialogOpen} 
-      />
       
       <SettingsDialog
         open={settingsDialogOpen}
