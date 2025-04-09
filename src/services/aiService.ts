@@ -16,8 +16,9 @@ interface ChatResponse {
   generated_text?: string;
 }
 
-// Clé API par défaut (votre clé personnelle)
-let huggingFaceApiKey = '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';
+// Clé API par défaut (clé de l'utilisateur)
+const DEFAULT_API_KEY = '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';
+let huggingFaceApiKey = DEFAULT_API_KEY;
 
 export const setHuggingFaceApiKey = (key: string) => {
   huggingFaceApiKey = key;
@@ -25,13 +26,14 @@ export const setHuggingFaceApiKey = (key: string) => {
 };
 
 export const getHuggingFaceApiKey = (): string => {
-  if (!huggingFaceApiKey) {
+  if (!huggingFaceApiKey || huggingFaceApiKey !== DEFAULT_API_KEY) {
     // Try to get from localStorage
     const storedKey = localStorage.getItem('huggingface_api_key');
     if (storedKey) {
       huggingFaceApiKey = storedKey;
     } else {
       // Si aucune clé n'est trouvée, utiliser la clé par défaut
+      huggingFaceApiKey = DEFAULT_API_KEY;
       localStorage.setItem('huggingface_api_key', huggingFaceApiKey);
     }
   }
@@ -95,7 +97,7 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
 
 Note: ${text} [/INST]</s>`;
 
-    console.log("Prompt complet d'analyse:", prompt.substring(0, 150) + "...");
+    console.log("Envoi de la requête à Hugging Face avec la clé API:", apiKey.substring(0, 5) + "...");
     
     const response = await fetch(
       'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
@@ -141,6 +143,11 @@ Note: ${text} [/INST]</s>`;
     }
     
     console.log("Texte généré extrait:", generatedText.substring(0, 150) + "...");
+    
+    // Si le texte généré est vide, lever une erreur
+    if (!generatedText || generatedText.trim() === "") {
+      throw new Error("Réponse vide du modèle");
+    }
     
     // Parse la réponse générée
     const parsedResponse = parseAIResponse(generatedText);
@@ -210,6 +217,11 @@ const parseAIResponse = (text: string): AIAnalysis => {
     }
   }
   
+  // S'assurer qu'il y a au moins un point clé
+  if (keyPoints.length === 0) {
+    keyPoints = ["Pas de points clés détectés"];
+  }
+  
   // Déterminer le sentiment
   let sentiment = "neutre";
   if (sentimentMatch && sentimentMatch[1]) {
@@ -245,6 +257,7 @@ export const chatWithAI = async (message: string, context: string): Promise<stri
   try {
     console.log("Envoi de message au chat IA:", message);
     console.log("Contexte fourni:", context.substring(0, 100) + "...");
+    console.log("Utilisation de la clé API:", apiKey.substring(0, 5) + "...");
     
     // Limiter la taille du contexte si nécessaire
     const maxContextLength = 2000;
@@ -287,38 +300,63 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
       throw new Error(`Erreur lors de la conversation: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
-    console.log("Réponse du chat reçue:", JSON.stringify(result).substring(0, 200) + "...");
+    // Récupérer le texte brut de la réponse pour le déboguer
+    const responseText = await response.text();
+    console.log("Réponse brute (texte):", responseText.substring(0, 300) + "...");
+    
+    // Tenter de parser la réponse JSON
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Erreur de parsing JSON:", e);
+      throw new Error("Format de réponse invalide");
+    }
+    
+    console.log("Réponse du chat parsée:", result);
     
     // Extraction du texte généré en fonction du format de réponse
-    let responseText = "";
+    let responseText2 = "";
     if (Array.isArray(result) && result.length > 0) {
-      if (result[0].generated_text !== undefined && result[0].generated_text !== "") {
-        responseText = result[0].generated_text;
-      } else {
-        // Si generated_text est vide mais que le résultat existe, essayer d'autres formats
-        responseText = "Le modèle n'a pas généré de réponse. Veuillez reformuler votre question.";
+      if (result[0].generated_text !== undefined) {
+        responseText2 = result[0].generated_text;
       }
     } else if (result.generated_text) {
-      responseText = result.generated_text;
+      responseText2 = result.generated_text;
     } else if (result.choices && result.choices.length > 0) {
-      responseText = result.choices[0].message.content;
-    } else {
-      // Traiter le cas où le résultat existe mais ne contient pas de texte
-      console.error("Format de réponse inattendu:", result);
-      return "Je n'ai pas pu générer une réponse appropriée. Veuillez reformuler votre question.";
+      responseText2 = result.choices[0].message.content;
     }
     
-    // Si le texte est vide, donner une réponse par défaut
-    if (!responseText || responseText.trim() === "") {
-      return "Je n'ai pas pu générer une réponse. Veuillez essayer avec une autre question.";
+    console.log("Texte de réponse extrait:", responseText2.substring(0, 150) + "...");
+    
+    // Si la réponse est vide après toutes les tentatives d'extraction
+    if (!responseText2 || responseText2.trim() === "") {
+      console.error("Réponse vide après extraction");
+      return "Le modèle n'a pas généré de réponse. Veuillez reformuler votre question.";
     }
     
-    console.log("Texte de réponse extrait:", responseText.substring(0, 150) + "...");
-    return responseText;
+    // Nettoyer la réponse (supprimer les balises d'instruction si présentes)
+    let cleanResponse = responseText2;
+    const instPattern = /<s>\[INST\].*?\[\/INST\]<\/s>/s;
+    
+    if (instPattern.test(cleanResponse)) {
+      cleanResponse = cleanResponse.replace(instPattern, '').trim();
+    }
+    
+    // Si après nettoyage la réponse est vide
+    if (!cleanResponse || cleanResponse.trim() === "") {
+      return "Le modèle n'a pas généré de réponse valide. Veuillez réessayer.";
+    }
+    
+    return cleanResponse;
   } catch (error) {
-    console.error("Erreur de conversation:", error);
-    toast.error("Erreur lors de la conversation avec l'IA");
-    return "Désolé, je n'ai pas pu traiter votre demande en raison d'une erreur technique. Veuillez reformuler votre question ou réessayer plus tard.";
+    console.error("Erreur de conversation détaillée:", error);
+    let errorMessage = "Désolé, je n'ai pas pu traiter votre demande.";
+    
+    if (error instanceof Error) {
+      errorMessage += " Erreur: " + error.message;
+    }
+    
+    return errorMessage;
   }
 };

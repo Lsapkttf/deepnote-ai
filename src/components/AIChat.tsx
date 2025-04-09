@@ -49,18 +49,12 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
       if (response && response.trim()) {
         // Traiter la réponse pour supprimer les balises d'instructions si présentes
         let cleanResponse = response;
-        const instPattern = /<s>\[INST\](.*?)\[\/INST\]<\/s>/s;
-        const match = response.match(instPattern);
         
-        if (match) {
-          // Si le format contient des balises d'instruction, extraire la partie pertinente
-          cleanResponse = response.replace(instPattern, '').trim();
-        }
-        
-        // Si la réponse contient un message d'erreur technique, proposer de réessayer
-        if (cleanResponse.includes("erreur technique") || 
-            cleanResponse.includes("n'ai pas pu traiter") || 
-            cleanResponse.includes("reformuler")) {
+        // Si la réponse contient un message d'erreur technique ou est vide, proposer de réessayer
+        if (cleanResponse.includes("erreur") || 
+            cleanResponse.includes("n'a pas pu") || 
+            cleanResponse.includes("reformuler") ||
+            cleanResponse.includes("n'a pas généré")) {
           setRetryMessage(messageToSend);
         }
         
@@ -75,7 +69,7 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
       setRetryMessage(messageToSend);
       
       toast.error("Erreur lors de la conversation avec l'IA");
-      onSendMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez essayer de reformuler votre question ou réessayer plus tard.", 'assistant');
+      onSendMessage("Le modèle n'a pas généré de réponse. Veuillez reformuler votre question.", 'assistant');
     } finally {
       setIsLoading(false);
     }

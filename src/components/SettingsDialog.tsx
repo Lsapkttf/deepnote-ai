@@ -29,6 +29,9 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
     language: "fr"
   });
 
+  // Clé API par défaut
+  const defaultKey = "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";
+
   useEffect(() => {
     // Charger les paramètres existants
     if (open) {
@@ -50,7 +53,6 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
       setHuggingFaceApiKey(settings.apiKey.trim());
     } else {
       // Si la clé est vide, utiliser la clé par défaut
-      const defaultKey = "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";
       setHuggingFaceApiKey(defaultKey);
       setSettings(prev => ({ ...prev, apiKey: defaultKey }));
     }
@@ -71,7 +73,6 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 
   const handleReset = () => {
     // Réinitialiser à la clé par défaut
-    const defaultKey = "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";
     setSettings(prev => ({ ...prev, apiKey: defaultKey }));
     toast.info("Clé API réinitialisée à la valeur par défaut");
   };
