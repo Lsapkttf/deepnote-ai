@@ -1,9 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Note, NoteColor, AIAnalysis } from "@/types/note";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { analyzeText } from "@/services/aiService";
 import { toast } from "sonner";
 import { CirclePlus, Save, SquarePen, MessageCircle, ArrowLeft, BrainCircuit } from "lucide-react";
@@ -38,6 +40,8 @@ const NoteEditor = ({
   const [content, setContent] = useState("");
   const [color, setColor] = useState<NoteColor>("yellow");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisTab, setAnalysisTab] = useState("summary");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (note) {
@@ -91,8 +95,8 @@ const NoteEditor = ({
   };
 
   return (
-    <div className={`p-4 h-full flex flex-col bg-note-${color}/20`}>
-      <div className="mb-4 flex items-center justify-between">
+    <div className={`h-full flex flex-col bg-note-${color}/20`}>
+      <div className="p-4 pb-0 mb-2 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour
@@ -148,49 +152,72 @@ const NoteEditor = ({
         </div>
       </div>
 
-      <div className={`flex-1 bg-note-${color} rounded-lg p-4 overflow-auto`}>
-        <Input
-          placeholder="Titre de la note"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="text-lg font-medium mb-2 bg-transparent border-none focus-visible:ring-0 p-1 w-full"
-        />
+      <div className="flex-1 p-4 flex flex-col overflow-hidden">
+        <div className={`flex-1 bg-note-${color} rounded-lg p-4 overflow-hidden flex flex-col`}>
+          <Input
+            placeholder="Titre de la note"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-lg font-medium mb-2 bg-transparent border-none focus-visible:ring-0 p-1 w-full"
+          />
 
-        <Textarea
-          placeholder="Contenu de la note..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full h-[calc(100%-50px)] resize-none bg-transparent border-none focus-visible:ring-0 p-1"
-        />
-      </div>
-
-      {aiAnalysis && (
-        <div className="mt-4 p-4 bg-card rounded-lg">
-          <h3 className="font-semibold mb-2 flex items-center">
-            <BrainCircuit className="h-4 w-4 mr-2" />
-            Analyse IA
-          </h3>
-          
-          <div className="mb-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Résumé</h4>
-            <p>{aiAnalysis.summary}</p>
-          </div>
-          
-          <div className="mb-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Points clés</h4>
-            <ul className="list-disc list-inside">
-              {aiAnalysis.keyPoints.map((point, index) => (
-                <li key={index}>{point}</li>
-              ))}
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Sentiment</h4>
-            <p className="capitalize">{aiAnalysis.sentiment}</p>
-          </div>
+          <Textarea
+            ref={textareaRef}
+            placeholder="Contenu de la note..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full flex-1 resize-none bg-transparent border-none focus-visible:ring-0 p-1"
+          />
         </div>
-      )}
+
+        {aiAnalysis && (
+          <div className="mt-4 bg-card rounded-lg border shadow-sm">
+            <div className="p-3 pb-0">
+              <h3 className="font-semibold mb-2 flex items-center">
+                <BrainCircuit className="h-4 w-4 mr-2" />
+                Analyse IA
+              </h3>
+            </div>
+            
+            <Tabs defaultValue="summary" value={analysisTab} onValueChange={setAnalysisTab}>
+              <div className="px-3">
+                <TabsList className="w-full">
+                  <TabsTrigger value="summary" className="flex-1">Résumé</TabsTrigger>
+                  <TabsTrigger value="keyPoints" className="flex-1">Points clés</TabsTrigger>
+                  <TabsTrigger value="sentiment" className="flex-1">Sentiment</TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <ScrollArea className="h-[200px] p-3">
+                <TabsContent value="summary" className="mt-0 px-3">
+                  <p className="whitespace-pre-line">{aiAnalysis.summary}</p>
+                </TabsContent>
+                
+                <TabsContent value="keyPoints" className="mt-0 px-3">
+                  <ul className="list-disc list-inside space-y-1">
+                    {aiAnalysis.keyPoints.map((point, index) => (
+                      <li key={index} className="pl-2">{point}</li>
+                    ))}
+                  </ul>
+                </TabsContent>
+                
+                <TabsContent value="sentiment" className="mt-0 px-3">
+                  <div className="flex items-center">
+                    <div className={`w-4 h-4 rounded-full mr-2 ${
+                      aiAnalysis.sentiment === 'positif' 
+                        ? 'bg-green-500' 
+                        : aiAnalysis.sentiment === 'négatif'
+                          ? 'bg-red-500'
+                          : 'bg-gray-500'
+                    }`}></div>
+                    <span className="capitalize">{aiAnalysis.sentiment}</span>
+                  </div>
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
