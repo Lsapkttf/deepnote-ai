@@ -26,18 +26,8 @@ export const setHuggingFaceApiKey = (key: string) => {
 };
 
 export const getHuggingFaceApiKey = (): string => {
-  if (!huggingFaceApiKey || huggingFaceApiKey !== DEFAULT_API_KEY) {
-    // Try to get from localStorage
-    const storedKey = localStorage.getItem('huggingface_api_key');
-    if (storedKey) {
-      huggingFaceApiKey = storedKey;
-    } else {
-      // Si aucune clé n'est trouvée, utiliser la clé par défaut
-      huggingFaceApiKey = DEFAULT_API_KEY;
-      localStorage.setItem('huggingface_api_key', huggingFaceApiKey);
-    }
-  }
-  return huggingFaceApiKey;
+  // Toujours utiliser la clé par défaut fournie par l'utilisateur
+  return DEFAULT_API_KEY;
 };
 
 export const checkApiKey = (): boolean => {
@@ -97,7 +87,7 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
 
 Note: ${text} [/INST]</s>`;
 
-    console.log("Envoi de la requête à Hugging Face avec la clé API:", apiKey.substring(0, 5) + "...");
+    console.log("Envoi de la requête à Hugging Face");
     
     const response = await fetch(
       'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
@@ -126,8 +116,20 @@ Note: ${text} [/INST]</s>`;
       throw new Error(`Erreur lors de l'analyse: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
-    console.log("Réponse brute reçue:", JSON.stringify(result).substring(0, 200) + "...");
+    // Récupérer le texte brut pour le debugging
+    const responseText = await response.text();
+    console.log("Réponse brute de l'API:", responseText.substring(0, 200) + "...");
+    
+    // Parser la réponse JSON
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Erreur de parsing JSON:", e);
+      throw new Error("Format de réponse invalide");
+    }
+    
+    console.log("Réponse analysée:", result);
     
     // Extraction du texte généré
     let generatedText = "";
@@ -158,7 +160,7 @@ Note: ${text} [/INST]</s>`;
     toast.error("Erreur lors de l'analyse du texte");
     return {
       summary: "Impossible d'analyser le texte",
-      keyPoints: ["Erreur d'analyse", "Vérifiez que votre clé API est valide", "Assurez-vous que le texte n'est pas vide"],
+      keyPoints: ["Erreur d'analyse", "Vérifiez votre connexion internet", "Réessayez plus tard"],
       sentiment: "neutre"
     };
   }
@@ -241,8 +243,6 @@ const parseAIResponse = (text: string): AIAnalysis => {
     }
   }
   
-  console.log("Analyse parsée:", { summary, keyPoints: keyPoints.length, sentiment });
-  
   return {
     summary,
     keyPoints,
@@ -256,8 +256,7 @@ export const chatWithAI = async (message: string, context: string): Promise<stri
   
   try {
     console.log("Envoi de message au chat IA:", message);
-    console.log("Contexte fourni:", context.substring(0, 100) + "...");
-    console.log("Utilisation de la clé API:", apiKey.substring(0, 5) + "...");
+    console.log("Contexte fourni (extrait):", context.substring(0, 100) + "...");
     
     // Limiter la taille du contexte si nécessaire
     const maxContextLength = 2000;
@@ -271,7 +270,7 @@ Question de l'utilisateur: ${message}
 
 Réponds à cette question en te basant sur le contexte fourni. Si la réponse n'est pas dans le contexte, dis-le poliment. [/INST]</s>`;
 
-    console.log("Prompt complet:", prompt.substring(0, 150) + "...");
+    console.log("Prompt complet (extrait):", prompt.substring(0, 150) + "...");
     
     const response = await fetch(
       'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
@@ -300,7 +299,7 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
       throw new Error(`Erreur lors de la conversation: ${response.status} ${response.statusText}`);
     }
 
-    // Récupérer le texte brut de la réponse pour le déboguer
+    // Récupérer le texte brut pour le debugging
     const responseText = await response.text();
     console.log("Réponse brute (texte):", responseText.substring(0, 300) + "...");
     
@@ -316,27 +315,27 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
     console.log("Réponse du chat parsée:", result);
     
     // Extraction du texte généré en fonction du format de réponse
-    let responseText2 = "";
+    let generatedText = "";
     if (Array.isArray(result) && result.length > 0) {
       if (result[0].generated_text !== undefined) {
-        responseText2 = result[0].generated_text;
+        generatedText = result[0].generated_text;
       }
     } else if (result.generated_text) {
-      responseText2 = result.generated_text;
+      generatedText = result.generated_text;
     } else if (result.choices && result.choices.length > 0) {
-      responseText2 = result.choices[0].message.content;
+      generatedText = result.choices[0].message.content;
     }
     
-    console.log("Texte de réponse extrait:", responseText2.substring(0, 150) + "...");
+    console.log("Texte de réponse extrait:", generatedText.substring(0, 150) + "...");
     
     // Si la réponse est vide après toutes les tentatives d'extraction
-    if (!responseText2 || responseText2.trim() === "") {
+    if (!generatedText || generatedText.trim() === "") {
       console.error("Réponse vide après extraction");
       return "Le modèle n'a pas généré de réponse. Veuillez reformuler votre question.";
     }
     
     // Nettoyer la réponse (supprimer les balises d'instruction si présentes)
-    let cleanResponse = responseText2;
+    let cleanResponse = generatedText;
     const instPattern = /<s>\[INST\].*?\[\/INST\]<\/s>/s;
     
     if (instPattern.test(cleanResponse)) {

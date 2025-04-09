@@ -29,7 +29,7 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
     language: "fr"
   });
 
-  // Clé API par défaut
+  // Clé API par défaut fournie par l'utilisateur
   const defaultKey = "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";
 
   useEffect(() => {
@@ -108,7 +108,7 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
               onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
             />
             <p className="text-xs text-muted-foreground">
-              Nécessaire pour les fonctionnalités d'IA. Obtenez une clé sur <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="underline text-primary">huggingface.co</a>
+              La clé par défaut est déjà configurée. Vous pouvez utiliser la vôtre si nécessaire.
             </p>
           </div>
           

@@ -41,24 +41,13 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
     
     try {
       console.log("Envoi de la demande à l'IA...");
-      console.log("Contenu de la note envoyé:", noteContent.substring(0, 100) + "...");
+      console.log("Contenu de la note envoyé (extrait):", noteContent.substring(0, 100) + "...");
       
       const response = await chatWithAI(messageToSend, noteContent);
-      console.log("Réponse complète reçue de l'IA:", response);
+      console.log("Réponse reçue de l'IA (extrait):", response.substring(0, 100) + "...");
       
       if (response && response.trim()) {
-        // Traiter la réponse pour supprimer les balises d'instructions si présentes
-        let cleanResponse = response;
-        
-        // Si la réponse contient un message d'erreur technique ou est vide, proposer de réessayer
-        if (cleanResponse.includes("erreur") || 
-            cleanResponse.includes("n'a pas pu") || 
-            cleanResponse.includes("reformuler") ||
-            cleanResponse.includes("n'a pas généré")) {
-          setRetryMessage(messageToSend);
-        }
-        
-        onSendMessage(cleanResponse, 'assistant');
+        onSendMessage(response, 'assistant');
       } else {
         throw new Error("Réponse vide ou invalide du modèle IA");
       }
@@ -69,7 +58,7 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
       setRetryMessage(messageToSend);
       
       toast.error("Erreur lors de la conversation avec l'IA");
-      onSendMessage("Le modèle n'a pas généré de réponse. Veuillez reformuler votre question.", 'assistant');
+      onSendMessage("Erreur lors de la communication avec l'IA. Veuillez réessayer.", 'assistant');
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +67,13 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
   const handleRetry = () => {
     if (retryMessage) {
       handleSendMessage(retryMessage, true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && !isLoading && input.trim()) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -132,7 +128,7 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
           </div>
         )}
         {retryMessage && !isLoading && (
-          <div className="flex justify-center">
+          <div className="flex justify-center my-2">
             <Button 
               variant="outline" 
               size="sm" 
@@ -153,12 +149,7 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
             placeholder="Tapez votre message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
+            onKeyDown={handleKeyDown}
             disabled={isLoading}
             className="flex-1"
           />
