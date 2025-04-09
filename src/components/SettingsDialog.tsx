@@ -46,7 +46,15 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 
   const handleSave = () => {
     // Sauvegarder tous les paramètres
-    setHuggingFaceApiKey(settings.apiKey.trim());
+    if (settings.apiKey && settings.apiKey.trim() !== "") {
+      setHuggingFaceApiKey(settings.apiKey.trim());
+    } else {
+      // Si la clé est vide, utiliser la clé par défaut
+      const defaultKey = "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";
+      setHuggingFaceApiKey(defaultKey);
+      setSettings(prev => ({ ...prev, apiKey: defaultKey }));
+    }
+    
     localStorage.setItem("darkMode", settings.darkMode.toString());
     localStorage.setItem("language", settings.language);
     
@@ -61,6 +69,13 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
     onOpenChange(false);
   };
 
+  const handleReset = () => {
+    // Réinitialiser à la clé par défaut
+    const defaultKey = "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";
+    setSettings(prev => ({ ...prev, apiKey: defaultKey }));
+    toast.info("Clé API réinitialisée à la valeur par défaut");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -73,7 +88,17 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
         
         <div className="space-y-6 py-4">
           <div className="space-y-2">
-            <Label htmlFor="apiKey">Clé API Hugging Face</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="apiKey">Clé API Hugging Face</Label>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleReset} 
+                className="text-xs"
+              >
+                Réinitialiser
+              </Button>
+            </div>
             <Input
               id="apiKey"
               type="password"

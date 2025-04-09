@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "@/types/note";
-import { Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, RefreshCw } from "lucide-react";
 import { chatWithAI } from "@/services/aiService";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ interface AIChatProps {
 const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [retryMessage, setRetryMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,22 +28,22 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  const handleSendMessage = async (messageToSend = input.trim(), retry = false) => {
+    if (!messageToSend) return;
     
-    const userMessage = input.trim();
-    setInput("");
+    if (!retry) {
+      setInput("");
+      onSendMessage(messageToSend, 'user');
+    }
     
-    // Envoyer le message de l'utilisateur
-    onSendMessage(userMessage, 'user');
-    
-    // Traiter la réponse de l'IA
     setIsLoading(true);
+    setRetryMessage(null);
+    
     try {
       console.log("Envoi de la demande à l'IA...");
       console.log("Contenu de la note envoyé:", noteContent.substring(0, 100) + "...");
       
-      const response = await chatWithAI(userMessage, noteContent);
+      const response = await chatWithAI(messageToSend, noteContent);
       console.log("Réponse complète reçue de l'IA:", response);
       
       if (response && response.trim()) {
@@ -56,16 +57,33 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
           cleanResponse = response.replace(instPattern, '').trim();
         }
         
+        // Si la réponse contient un message d'erreur technique, proposer de réessayer
+        if (cleanResponse.includes("erreur technique") || 
+            cleanResponse.includes("n'ai pas pu traiter") || 
+            cleanResponse.includes("reformuler")) {
+          setRetryMessage(messageToSend);
+        }
+        
         onSendMessage(cleanResponse, 'assistant');
       } else {
         throw new Error("Réponse vide ou invalide du modèle IA");
       }
     } catch (error) {
       console.error("Erreur complète de chat:", error);
+      
+      // Stocker le message pour permettre une nouvelle tentative
+      setRetryMessage(messageToSend);
+      
       toast.error("Erreur lors de la conversation avec l'IA");
-      onSendMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez vérifier votre clé API et réessayer. Si le problème persiste, essayez de reformuler votre question.", 'assistant');
+      onSendMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez essayer de reformuler votre question ou réessayer plus tard.", 'assistant');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    if (retryMessage) {
+      handleSendMessage(retryMessage, true);
     }
   };
 
@@ -119,6 +137,19 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
             </div>
           </div>
         )}
+        {retryMessage && !isLoading && (
+          <div className="flex justify-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center" 
+              onClick={handleRetry}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Réessayer
+            </Button>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -138,7 +169,7 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
             className="flex-1"
           />
           <Button
-            onClick={handleSendMessage}
+            onClick={() => handleSendMessage()}
             disabled={!input.trim() || isLoading}
             size="icon"
           >

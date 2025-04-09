@@ -16,8 +16,8 @@ interface ChatResponse {
   generated_text?: string;
 }
 
-// Clé API (à remplacer par l'utilisateur)
-let huggingFaceApiKey = '';
+// Clé API par défaut (votre clé personnelle)
+let huggingFaceApiKey = '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';
 
 export const setHuggingFaceApiKey = (key: string) => {
   huggingFaceApiKey = key;
@@ -30,6 +30,9 @@ export const getHuggingFaceApiKey = (): string => {
     const storedKey = localStorage.getItem('huggingface_api_key');
     if (storedKey) {
       huggingFaceApiKey = storedKey;
+    } else {
+      // Si aucune clé n'est trouvée, utiliser la clé par défaut
+      localStorage.setItem('huggingface_api_key', huggingFaceApiKey);
     }
   }
   return huggingFaceApiKey;
@@ -42,11 +45,7 @@ export const checkApiKey = (): boolean => {
 // Transcription audio avec Whisper
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   const apiKey = getHuggingFaceApiKey();
-  if (!apiKey) {
-    toast.error("Clé API Hugging Face manquante");
-    throw new Error("Clé API Hugging Face manquante");
-  }
-
+  
   try {
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.wav');
@@ -80,11 +79,7 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
 // Analyse de texte avec un modèle LLM
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   const apiKey = getHuggingFaceApiKey();
-  if (!apiKey) {
-    toast.error("Clé API Hugging Face manquante");
-    throw new Error("Clé API Hugging Face manquante");
-  }
-
+  
   if (!text || text.trim().length === 0) {
     toast.error("Aucun texte à analyser");
     throw new Error("Aucun texte à analyser");
@@ -246,11 +241,7 @@ const parseAIResponse = (text: string): AIAnalysis => {
 // Chat avec l'IA à propos de la note
 export const chatWithAI = async (message: string, context: string): Promise<string> => {
   const apiKey = getHuggingFaceApiKey();
-  if (!apiKey) {
-    toast.error("Clé API Hugging Face manquante");
-    throw new Error("Clé API Hugging Face manquante");
-  }
-
+  
   try {
     console.log("Envoi de message au chat IA:", message);
     console.log("Contexte fourni:", context.substring(0, 100) + "...");
@@ -301,15 +292,26 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
     
     // Extraction du texte généré en fonction du format de réponse
     let responseText = "";
-    if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
-      responseText = result[0].generated_text;
+    if (Array.isArray(result) && result.length > 0) {
+      if (result[0].generated_text !== undefined && result[0].generated_text !== "") {
+        responseText = result[0].generated_text;
+      } else {
+        // Si generated_text est vide mais que le résultat existe, essayer d'autres formats
+        responseText = "Le modèle n'a pas généré de réponse. Veuillez reformuler votre question.";
+      }
     } else if (result.generated_text) {
       responseText = result.generated_text;
     } else if (result.choices && result.choices.length > 0) {
       responseText = result.choices[0].message.content;
     } else {
+      // Traiter le cas où le résultat existe mais ne contient pas de texte
       console.error("Format de réponse inattendu:", result);
-      throw new Error("Format de réponse inattendu");
+      return "Je n'ai pas pu générer une réponse appropriée. Veuillez reformuler votre question.";
+    }
+    
+    // Si le texte est vide, donner une réponse par défaut
+    if (!responseText || responseText.trim() === "") {
+      return "Je n'ai pas pu générer une réponse. Veuillez essayer avec une autre question.";
     }
     
     console.log("Texte de réponse extrait:", responseText.substring(0, 150) + "...");
@@ -317,6 +319,6 @@ Réponds à cette question en te basant sur le contexte fourni. Si la réponse n
   } catch (error) {
     console.error("Erreur de conversation:", error);
     toast.error("Erreur lors de la conversation avec l'IA");
-    return "Désolé, je n'ai pas pu traiter votre demande en raison d'une erreur technique. Veuillez vérifier votre clé API et réessayer.";
+    return "Désolé, je n'ai pas pu traiter votre demande en raison d'une erreur technique. Veuillez reformuler votre question ou réessayer plus tard.";
   }
 };
