@@ -72,8 +72,12 @@ const NoteEditor = ({
 
     try {
       setIsAnalyzing(true);
+      toast.info("Analyse en cours...");
+      
       const analysis = await analyzeText(content);
       setAIAnalysis(analysis);
+      
+      toast.success("Analyse terminée");
     } catch (error) {
       console.error("Erreur d'analyse:", error);
       toast.error("Erreur lors de l'analyse du texte");

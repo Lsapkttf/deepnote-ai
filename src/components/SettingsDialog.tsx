@@ -9,11 +9,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { setHuggingFaceApiKey, getHuggingFaceApiKey } from "@/services/aiService";
 import { toast } from "sonner";
 import { AppSettings } from "@/types/note";
 
@@ -24,23 +22,19 @@ interface SettingsDialogProps {
 
 const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   const [settings, setSettings] = useState<AppSettings>({
-    apiKey: "",
+    apiKey: "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", // Clé fixe
     darkMode: false,
     language: "fr"
   });
 
-  // Clé API par défaut fournie par l'utilisateur
-  const defaultKey = "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";
-
   useEffect(() => {
     // Charger les paramètres existants
     if (open) {
-      const savedApiKey = getHuggingFaceApiKey();
       const savedDarkMode = localStorage.getItem("darkMode") === "true";
       const savedLanguage = localStorage.getItem("language") as "fr" | "en" || "fr";
       
       setSettings({
-        apiKey: savedApiKey,
+        apiKey: "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", // Toujours utiliser la clé fixe
         darkMode: savedDarkMode,
         language: savedLanguage
       });
@@ -48,15 +42,7 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   }, [open]);
 
   const handleSave = () => {
-    // Sauvegarder tous les paramètres
-    if (settings.apiKey && settings.apiKey.trim() !== "") {
-      setHuggingFaceApiKey(settings.apiKey.trim());
-    } else {
-      // Si la clé est vide, utiliser la clé par défaut
-      setHuggingFaceApiKey(defaultKey);
-      setSettings(prev => ({ ...prev, apiKey: defaultKey }));
-    }
-    
+    // Sauvegarder les paramètres (sauf la clé API qui est fixe)
     localStorage.setItem("darkMode", settings.darkMode.toString());
     localStorage.setItem("language", settings.language);
     
@@ -71,12 +57,6 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
     onOpenChange(false);
   };
 
-  const handleReset = () => {
-    // Réinitialiser à la clé par défaut
-    setSettings(prev => ({ ...prev, apiKey: defaultKey }));
-    toast.info("Clé API réinitialisée à la valeur par défaut");
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -88,30 +68,6 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
         </DialogHeader>
         
         <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="apiKey">Clé API Hugging Face</Label>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleReset} 
-                className="text-xs"
-              >
-                Réinitialiser
-              </Button>
-            </div>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder="hf_..."
-              value={settings.apiKey}
-              onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
-            />
-            <p className="text-xs text-muted-foreground">
-              La clé par défaut est déjà configurée. Vous pouvez utiliser la vôtre si nécessaire.
-            </p>
-          </div>
-          
           <div className="flex items-center justify-between">
             <Label htmlFor="darkMode">Mode sombre</Label>
             <Switch 
@@ -136,6 +92,13 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
                 <Label htmlFor="en">English</Label>
               </div>
             </RadioGroup>
+          </div>
+          
+          <div className="space-y-1">
+            <Label>Clé API Hugging Face</Label>
+            <p className="text-sm text-muted-foreground">
+              La clé API est configurée: {settings.apiKey.substring(0, 8)}...
+            </p>
           </div>
         </div>
         

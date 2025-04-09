@@ -41,18 +41,17 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
     
     try {
       console.log("Envoi de la demande à l'IA...");
-      console.log("Contenu de la note envoyé (extrait):", noteContent.substring(0, 100) + "...");
       
       const response = await chatWithAI(messageToSend, noteContent);
-      console.log("Réponse reçue de l'IA (extrait):", response.substring(0, 100) + "...");
+      console.log("Réponse reçue:", response);
       
-      if (response && response.trim()) {
+      if (response) {
         onSendMessage(response, 'assistant');
       } else {
-        throw new Error("Réponse vide ou invalide du modèle IA");
+        throw new Error("Réponse vide");
       }
     } catch (error) {
-      console.error("Erreur complète de chat:", error);
+      console.error("Erreur de chat:", error);
       
       // Stocker le message pour permettre une nouvelle tentative
       setRetryMessage(messageToSend);
