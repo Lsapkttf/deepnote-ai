@@ -5,6 +5,18 @@ import { toast } from "sonner";
 // Clé API Groq fixe fournie par l'utilisateur
 const API_KEY = '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';
 
+// Stockage en mémoire des conversations pour chaque note
+interface ConversationMemory {
+  [noteId: string]: {
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
+  }[];
+}
+
+// Initialiser la mémoire de conversation
+const conversationMemory: ConversationMemory = {};
+
 // Fonction pour analyser le texte avec Groq (Llama 3)
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   try {
@@ -101,7 +113,7 @@ Sentiment:
 };
 
 // Fonction pour le chat IA
-export const chatWithAI = async (message: string, noteContent: string): Promise<string> => {
+export const chatWithAI = async (message: string, noteContent: string, noteId?: string): Promise<string> => {
   try {
     if (!message || message.trim().length === 0) {
       throw new Error("Message vide");
@@ -116,6 +128,36 @@ export const chatWithAI = async (message: string, noteContent: string): Promise<
     
     const systemPrompt = "Tu es un assistant qui répond à des questions sur le contenu d'une note. Réponds uniquement en te basant sur les informations fournies dans la note. Si la réponse n'est pas dans le contenu, dis-le simplement.";
     
+    // Construire les messages avec historique si disponible
+    const messages = [
+      {
+        role: "system" as const,
+        content: systemPrompt
+      }
+    ];
+    
+    // Ajouter l'historique de conversation si disponible pour cette note
+    if (noteId && conversationMemory[noteId]) {
+      const history = conversationMemory[noteId];
+      // Limiter l'historique aux 10 derniers échanges pour éviter les dépassements de tokens
+      const recentHistory = history.slice(-10);
+      
+      recentHistory.forEach(msg => {
+        messages.push({
+          role: msg.role,
+          content: msg.content
+        });
+      });
+    }
+    
+    // Ajouter le message actuel
+    messages.push({
+      role: "user" as const, 
+      content: `Contexte (contenu de la note): "${trimmedContent}"
+
+Question: ${message}`
+    });
+    
     const response = await fetch(
       'https://api.groq.com/openai/v1/chat/completions',
       {
@@ -126,18 +168,7 @@ export const chatWithAI = async (message: string, noteContent: string): Promise<
         },
         body: JSON.stringify({
           model: "llama3-8b-8192",
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            },
-            {
-              role: "user",
-              content: `Contexte (contenu de la note): "${trimmedContent}"
-
-Question: ${message}`
-            }
-          ],
+          messages: messages,
           temperature: 0.7,
           max_tokens: 500,
         }),
@@ -156,6 +187,28 @@ Question: ${message}`
     if (result.choices && result.choices.length > 0 && result.choices[0].message) {
       const generatedText = result.choices[0].message.content;
       console.log("Réponse générée:", generatedText);
+      
+      // Sauvegarder dans l'historique de conversation si noteId est fourni
+      if (noteId) {
+        if (!conversationMemory[noteId]) {
+          conversationMemory[noteId] = [];
+        }
+        
+        // Sauvegarder la question de l'utilisateur
+        conversationMemory[noteId].push({
+          role: 'user',
+          content: message,
+          timestamp: new Date()
+        });
+        
+        // Sauvegarder la réponse de l'assistant
+        conversationMemory[noteId].push({
+          role: 'assistant',
+          content: generatedText,
+          timestamp: new Date()
+        });
+      }
+      
       return generatedText.trim();
     } else {
       throw new Error("Format de réponse inattendu");
@@ -171,48 +224,39 @@ Question: ${message}`
   }
 };
 
+// Fonction pour récupérer l'historique des conversations pour une note
+export const getChatHistory = (noteId: string) => {
+  return conversationMemory[noteId] || [];
+};
+
 // Fonction pour la transcription audio
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   try {
-    // Nous utiliserons l'API Groq pour la transcription également
-    // Conversion du blob audio en base64
-    const reader = new FileReader();
-    const audioBase64Promise = new Promise<string>((resolve, reject) => {
-      reader.onloadend = () => {
-        const base64data = reader.result as string;
-        const base64Content = base64data.split(',')[1]; // Enlever le préfixe data:audio/wav;base64,
-        resolve(base64Content);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(audioBlob);
-    });
+    console.log("Début de la transcription audio...");
     
-    const audioBase64 = await audioBase64Promise;
+    // Créer un FormData pour envoyer le fichier audio
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.wav');
+    formData.append('model', 'whisper-1');
     
-    // Utiliser le modèle Whisper via Groq
     const response = await fetch(
-      'https://api.groq.com/openai/v1/audio/transcriptions',
+      'https://api.openai.com/v1/audio/transcriptions',
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${API_KEY}`,
         },
-        body: JSON.stringify({
-          model: "whisper-large-v3",
-          file: audioBase64,
-          response_format: "text"
-        }),
+        body: formData,
       }
     );
 
     if (!response.ok) {
-      // Si Groq ne supporte pas la transcription avec ce modèle,
-      // on peut revenir à un message d'erreur explicatif
-      console.error("Erreur API transcription Groq:", await response.text());
+      console.error("Erreur API transcription:", await response.text());
       return "La transcription audio n'est pas disponible. Veuillez entrer le texte manuellement.";
     }
 
     const result = await response.json();
+    console.log("Transcription réussie:", result);
     return result.text || "";
   } catch (error) {
     console.error("Erreur de transcription:", error);

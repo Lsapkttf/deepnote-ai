@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -300,6 +299,7 @@ const Index = () => {
               noteContent={currentNote.type === 'voice' && currentNote.transcription 
                 ? currentNote.transcription 
                 : currentNote.content}
+              noteId={currentNote.id}
               onBack={() => setView("editor")}
             />
           )}

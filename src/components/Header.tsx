@@ -1,9 +1,23 @@
 
-import { Menu, Search, Settings, X } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Menu, Search, Settings, X, BrainCircuit } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -12,68 +26,126 @@ interface HeaderProps {
 }
 
 const Header = ({ toggleSidebar, onSearch, onOpenSettings }: HeaderProps) => {
+  const [searchActive, setSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  const isMobile = useIsMobile();
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    onSearch(value);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchQuery);
   };
 
-  const clearSearch = () => {
+  const handleClearSearch = () => {
     setSearchQuery("");
     onSearch("");
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between p-2 border-b bg-background">
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="md:flex"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-md bg-yellow-400 flex items-center justify-center text-white font-bold">
-            VN
+    <header className="border-b sticky top-0 z-30 bg-background">
+      <div className="flex h-16 items-center px-4 sm:justify-between">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={toggleSidebar}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="hidden md:flex items-center">
+            <BrainCircuit className="h-6 w-6 mr-2 text-primary" />
+            <h1 className="text-xl font-semibold text-foreground">DeepNote</h1>
           </div>
-          <span className="text-xl font-semibold hidden sm:inline-block">VoxNote</span>
+          <div className="flex md:hidden items-center ml-2">
+            <BrainCircuit className="h-5 w-5 mr-1 text-primary" />
+            <h1 className="text-lg font-semibold text-foreground">DeepNote</h1>
+          </div>
+        </div>
+
+        <div className="flex flex-1 items-center justify-end space-x-2">
+          {searchActive ? (
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative w-full max-w-sm mx-4"
+            >
+              <Input
+                type="search"
+                placeholder="Rechercher des notes..."
+                className="w-full pl-9 pr-10"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                autoFocus
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              {searchQuery && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={handleClearSearch}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </form>
+          ) : (
+            <Button
+              variant="outline"
+              size="icon"
+              className="hidden md:flex"
+              onClick={() => setSearchActive(true)}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          )}
+
+          <NavigationMenu className="hidden md:block">
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Aide</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid gap-3 p-4 md:w-[400px] lg:w-[500px]">
+                    <div className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          href="#"
+                        >
+                          <div className="mb-2 mt-4 text-lg font-medium">
+                            Bienvenue dans DeepNote
+                          </div>
+                          <p className="text-sm leading-tight text-muted-foreground">
+                            Un outil de prise de notes avec des fonctionnalités IA pour améliorer votre productivité.
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+
+          <Button variant="ghost" size="icon" onClick={onOpenSettings}>
+            <Settings className="h-5 w-5" />
+          </Button>
         </div>
       </div>
-
-      <div className="flex-1 max-w-md mx-4">
-        <form onSubmit={handleSearch} className="relative">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher..."
-            className="pl-8 pr-8 bg-secondary/50"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button 
-              type="button"
-              onClick={clearSearch}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
-          )}
-        </form>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={onOpenSettings}
+      <div className="md:hidden flex items-center justify-between px-4 pb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => setSearchActive(true)}
         >
-          <Settings className="h-5 w-5" />
+          <Search className="h-4 w-4 mr-2" />
+          Rechercher des notes...
         </Button>
       </div>
     </header>

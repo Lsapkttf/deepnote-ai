@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Play, Pause } from "lucide-react";
+import { Mic, Square, Play, Pause, Loader2 } from "lucide-react";
 import { startRecording, stopRecording, RecordingState } from "@/services/audioService";
 import { Progress } from "@/components/ui/progress";
 import { transcribeAudio } from "@/services/aiService";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface VoiceRecorderProps {
   onTranscriptionComplete: (transcription: string) => void;
@@ -24,6 +25,8 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [partialTranscription, setPartialTranscription] = useState("");
+  const [finalTranscription, setFinalTranscription] = useState("");
 
   useEffect(() => {
     let interval: number;
@@ -58,11 +61,18 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
 
   const handleStartRecording = async () => {
     setRecordingTime(0);
+    setPartialTranscription("");
+    setFinalTranscription("");
     await startRecording(recordingState, setRecordingState);
   };
 
   const handleStopRecording = () => {
     stopRecording(recordingState, setRecordingState);
+    
+    // Start auto-transcription after stopping
+    setTimeout(() => {
+      handleTranscribe();
+    }, 500);
   };
 
   const togglePlayback = () => {
@@ -84,18 +94,22 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
     }
     
     setIsTranscribing(true);
+    setPartialTranscription("Transcription en cours...");
     
     try {
       const audioBlob = new Blob(recordingState.audioChunks, { type: 'audio/wav' });
       const transcription = await transcribeAudio(audioBlob);
       
       if (transcription) {
+        setFinalTranscription(transcription);
         onTranscriptionComplete(transcription);
       } else {
+        setPartialTranscription("");
         toast.error("La transcription n'a pas pu être générée");
       }
     } catch (error) {
       console.error("Erreur de transcription:", error);
+      setPartialTranscription("");
       toast.error("Erreur lors de la transcription");
     } finally {
       setIsTranscribing(false);
@@ -109,70 +123,90 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
   };
 
   return (
-    <div className="p-4 flex flex-col items-center">
-      <div className="w-full max-w-md bg-card p-6 rounded-lg shadow-sm">
-        <h2 className="text-xl font-semibold mb-4 text-center">Enregistrement vocal</h2>
+    <div className="p-4 flex flex-col items-center justify-center h-full">
+      <Card className="w-full max-w-lg shadow-lg border-border">
+        <CardHeader className="pb-2 border-b">
+          <CardTitle className="text-xl font-semibold text-center flex items-center justify-center gap-2">
+            <Mic className="h-5 w-5 text-primary" />
+            Enregistrement Vocal
+          </CardTitle>
+        </CardHeader>
         
-        <div className="mb-4">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            {recordingState.isRecording ? (
-              <>
-                <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse-recording"></div>
-                <span className="text-sm">Enregistrement en cours...</span>
-              </>
-            ) : recordingState.audioURL ? (
-              <span className="text-sm">Enregistrement terminé</span>
-            ) : (
-              <span className="text-sm">Prêt à enregistrer</span>
+        <CardContent className="pt-6 pb-4">
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-center space-x-2">
+              {recordingState.isRecording ? (
+                <>
+                  <span className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                    <span className="font-medium">Enregistrement en cours...</span>
+                  </span>
+                </>
+              ) : recordingState.audioURL ? (
+                <span className="font-medium">Enregistrement terminé</span>
+              ) : (
+                <span className="font-medium">Prêt à enregistrer</span>
+              )}
+            </div>
+            
+            <div className="text-center text-3xl font-mono font-semibold">
+              {formatTime(recordingTime)}
+            </div>
+            
+            {recordingState.isRecording && (
+              <Progress value={Math.min(recordingTime, 300) / 3} className="h-2" />
+            )}
+            
+            <div className="flex justify-center space-x-4 my-4">
+              {!recordingState.isRecording && !recordingState.audioURL && (
+                <Button 
+                  size="lg" 
+                  className="rounded-full w-16 h-16 bg-red-500 hover:bg-red-600 text-white"
+                  onClick={handleStartRecording}
+                >
+                  <Mic className="h-6 w-6" />
+                </Button>
+              )}
+              
+              {recordingState.isRecording && (
+                <Button 
+                  size="lg"
+                  variant="outline" 
+                  className="rounded-full w-16 h-16 border-red-500 text-red-500"
+                  onClick={handleStopRecording}
+                >
+                  <Square className="h-6 w-6" />
+                </Button>
+              )}
+              
+              {!recordingState.isRecording && recordingState.audioURL && (
+                <Button 
+                  size="lg"
+                  variant="outline" 
+                  className="rounded-full w-12 h-12"
+                  onClick={togglePlayback}
+                >
+                  {isPlaying ? (
+                    <Pause className="h-5 w-5" />
+                  ) : (
+                    <Play className="h-5 w-5" />
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {(partialTranscription || finalTranscription) && (
+              <div className="mt-4 p-4 rounded-md bg-muted/40 max-h-[200px] overflow-y-auto">
+                <h3 className="text-sm font-medium mb-2">Transcription:</h3>
+                <p className="text-sm whitespace-pre-line">
+                  {finalTranscription || partialTranscription}
+                </p>
+              </div>
             )}
           </div>
-          
-          <div className="text-center text-xl font-mono">{formatTime(recordingTime)}</div>
-          
-          {recordingState.isRecording && (
-            <Progress value={Math.min(recordingTime, 300) / 3} className="mt-2" />
-          )}
-        </div>
+        </CardContent>
         
-        <div className="flex justify-center space-x-4 mb-6">
-          {!recordingState.isRecording && !recordingState.audioURL && (
-            <Button 
-              size="lg" 
-              className="rounded-full bg-red-500 hover:bg-red-600 text-white"
-              onClick={handleStartRecording}
-            >
-              <Mic className="h-5 w-5" />
-            </Button>
-          )}
-          
-          {recordingState.isRecording && (
-            <Button 
-              size="lg"
-              variant="outline" 
-              className="rounded-full border-red-500 text-red-500"
-              onClick={handleStopRecording}
-            >
-              <Square className="h-5 w-5" />
-            </Button>
-          )}
-          
-          {!recordingState.isRecording && recordingState.audioURL && (
-            <Button 
-              size="lg"
-              variant="outline" 
-              className="rounded-full"
-              onClick={togglePlayback}
-            >
-              {isPlaying ? (
-                <Pause className="h-5 w-5" />
-              ) : (
-                <Play className="h-5 w-5" />
-              )}
-            </Button>
-          )}
-        </div>
-        
-        <div className="flex space-x-2 justify-end">
+        <CardFooter className="flex justify-between border-t pt-4">
           <Button
             variant="outline"
             onClick={onCancel}
@@ -185,30 +219,15 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
             disabled={!recordingState.audioURL || isTranscribing}
             className="relative"
           >
-            {isTranscribing ? "Transcription en cours..." : "Transcrire"}
-            {isTranscribing && (
-              <span className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle 
-                    className="opacity-25" 
-                    cx="12" 
-                    cy="12" 
-                    r="10" 
-                    stroke="currentColor" 
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path 
-                    className="opacity-75" 
-                    fill="currentColor" 
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
+            {isTranscribing ? (
+              <span className="flex items-center">
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Transcription...
               </span>
-            )}
+            ) : finalTranscription ? "Utiliser cette transcription" : "Transcrire"}
           </Button>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
