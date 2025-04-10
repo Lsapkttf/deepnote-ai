@@ -2,28 +2,41 @@
 import { AIAnalysis } from '../types/note';
 import { toast } from "sonner";
 
-// Clé API fixe fournie par l'utilisateur
-const API_KEY = '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';
+// Clé API Groq fixe fournie par l'utilisateur
+const API_KEY = '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';
 
-// Fonction pour analyser le texte avec Mistral
+// Fonction pour analyser le texte avec Groq (Llama 3)
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   try {
     if (!text || text.trim().length === 0) {
       throw new Error("Aucun texte à analyser");
     }
 
-    console.log("Démarrage de l'analyse...");
+    console.log("Démarrage de l'analyse avec Groq...");
     
-    const prompt = `<s>[INST] Voici une note: "${text.substring(0, 4000)}${text.length > 4000 ? '...' : ''}"
+    const prompt = `Voici une note: "${text.substring(0, 4000)}${text.length > 4000 ? '...' : ''}"
 
 Je voudrais que tu me fournisses:
 1. Un résumé bref (2-3 phrases)
 2. Les points clés (liste de 3-5 points)
 3. Le sentiment général exprimé (positif, négatif ou neutre)
-[/INST]</s>`;
+
+Réponds avec un format clairement structuré:
+
+Résumé:
+[Ton résumé ici]
+
+Points clés:
+- [Premier point]
+- [Deuxième point]
+- [Troisième point]
+- [Etc. si nécessaire]
+
+Sentiment:
+[positif/négatif/neutre]`;
 
     const response = await fetch(
-      'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
+      'https://api.groq.com/openai/v1/chat/completions',
       {
         method: 'POST',
         headers: {
@@ -31,46 +44,49 @@ Je voudrais que tu me fournisses:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 500,
-            temperature: 0.7,
-            return_full_text: false
-          },
+          model: "llama3-8b-8192",
+          messages: [
+            {
+              role: "system",
+              content: "Tu es un assistant spécialisé dans l'analyse de texte en français."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.5,
+          max_tokens: 500,
         }),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Erreur API:", errorText);
+      console.error("Erreur API Groq:", errorText);
       throw new Error(`Erreur de connexion: ${response.status}`);
     }
 
     const result = await response.json();
     console.log("Réponse brute:", result);
     
-    let generatedText = "";
-    if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
-      generatedText = result[0].generated_text;
-    } else if (result.generated_text) {
-      generatedText = result.generated_text;
+    if (result.choices && result.choices.length > 0 && result.choices[0].message) {
+      const generatedText = result.choices[0].message.content;
+      console.log("Texte généré:", generatedText);
+      
+      // Extraction des parties du texte
+      const summary = extractSummary(generatedText);
+      const keyPoints = extractKeyPoints(generatedText);
+      const sentiment = extractSentiment(generatedText);
+
+      return {
+        summary,
+        keyPoints,
+        sentiment
+      };
     } else {
       throw new Error("Format de réponse inattendu");
     }
-
-    console.log("Texte généré:", generatedText);
-    
-    // Extraction des parties du texte
-    const summary = extractSummary(generatedText);
-    const keyPoints = extractKeyPoints(generatedText);
-    const sentiment = extractSentiment(generatedText);
-
-    return {
-      summary,
-      keyPoints,
-      sentiment
-    };
   } catch (error) {
     console.error("Erreur d'analyse:", error);
     toast.error("Erreur lors de l'analyse du texte");
@@ -91,21 +107,17 @@ export const chatWithAI = async (message: string, noteContent: string): Promise<
       throw new Error("Message vide");
     }
 
-    console.log("Envoi au chat IA:", message);
+    console.log("Envoi au chat IA via Groq:", message);
     
     // Limiter la taille du contenu de la note pour éviter les dépassements
     const trimmedContent = noteContent.length > 3000 
       ? noteContent.substring(0, 3000) + "..." 
       : noteContent;
     
-    const prompt = `<s>[INST] Contexte (contenu de la note): "${trimmedContent}"
-
-Question: ${message}
-
-Réponds à cette question en te basant uniquement sur le contenu de la note. Si la réponse n'est pas dans le contexte, dis-le simplement. [/INST]</s>`;
-
+    const systemPrompt = "Tu es un assistant qui répond à des questions sur le contenu d'une note. Réponds uniquement en te basant sur les informations fournies dans la note. Si la réponse n'est pas dans le contenu, dis-le simplement.";
+    
     const response = await fetch(
-      'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
+      'https://api.groq.com/openai/v1/chat/completions',
       {
         method: 'POST',
         headers: {
@@ -113,37 +125,41 @@ Réponds à cette question en te basant uniquement sur le contenu de la note. Si
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 500,
-            temperature: 0.7,
-            return_full_text: false
-          },
+          model: "llama3-8b-8192",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: `Contexte (contenu de la note): "${trimmedContent}"
+
+Question: ${message}`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500,
         }),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Erreur API chat:", errorText);
+      console.error("Erreur API Groq chat:", errorText);
       throw new Error(`Erreur de connexion: ${response.status}`);
     }
 
     const result = await response.json();
     console.log("Réponse brute du chat:", result);
     
-    let generatedText = "";
-    if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
-      generatedText = result[0].generated_text;
-    } else if (result.generated_text) {
-      generatedText = result.generated_text;
+    if (result.choices && result.choices.length > 0 && result.choices[0].message) {
+      const generatedText = result.choices[0].message.content;
+      console.log("Réponse générée:", generatedText);
+      return generatedText.trim();
     } else {
       throw new Error("Format de réponse inattendu");
     }
-
-    console.log("Réponse générée:", generatedText);
-    
-    return generatedText.trim();
   } catch (error) {
     console.error("Erreur de chat:", error);
     
@@ -158,24 +174,42 @@ Réponds à cette question en te basant uniquement sur le contenu de la note. Si
 // Fonction pour la transcription audio
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   try {
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'audio.wav');
+    // Nous utiliserons l'API Groq pour la transcription également
+    // Conversion du blob audio en base64
+    const reader = new FileReader();
+    const audioBase64Promise = new Promise<string>((resolve, reject) => {
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        const base64Content = base64data.split(',')[1]; // Enlever le préfixe data:audio/wav;base64,
+        resolve(base64Content);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(audioBlob);
+    });
     
+    const audioBase64 = await audioBase64Promise;
+    
+    // Utiliser le modèle Whisper via Groq
     const response = await fetch(
-      'https://api-inference.huggingface.co/models/openai/whisper-small',
+      'https://api.groq.com/openai/v1/audio/transcriptions',
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${API_KEY}`,
         },
-        body: formData,
+        body: JSON.stringify({
+          model: "whisper-large-v3",
+          file: audioBase64,
+          response_format: "text"
+        }),
       }
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Erreur API transcription:", errorText);
-      throw new Error(`Erreur lors de la transcription: ${response.status}`);
+      // Si Groq ne supporte pas la transcription avec ce modèle,
+      // on peut revenir à un message d'erreur explicatif
+      console.error("Erreur API transcription Groq:", await response.text());
+      return "La transcription audio n'est pas disponible. Veuillez entrer le texte manuellement.";
     }
 
     const result = await response.json();
@@ -183,44 +217,41 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   } catch (error) {
     console.error("Erreur de transcription:", error);
     toast.error("Erreur lors de la transcription audio");
-    return "";
+    return "La transcription audio n'est pas disponible actuellement. Veuillez entrer le texte manuellement.";
   }
 };
 
 // Fonctions utilitaires pour extraire les informations de la réponse de l'IA
 function extractSummary(text: string): string {
-  // Rechercher les motifs courants pour le résumé
-  const summaryPatterns = [
-    /résumé\s*:([^]*?)(?=points clés|points-clés|sentiment|$)/i,
-    /^([^]*?)(?=points clés|points-clés|sentiment|$)/i,
-  ];
-  
-  for (const pattern of summaryPatterns) {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      return match[1].trim();
-    }
+  // Rechercher le résumé entre "Résumé:" et la prochaine section
+  const summaryMatch = text.match(/Résumé\s*:(.*?)(?=Points clés|$)/is);
+  if (summaryMatch && summaryMatch[1]) {
+    return summaryMatch[1].trim();
   }
   
-  // Prendre les premières lignes comme résumé par défaut
-  const lines = text.split('\n').filter(line => line.trim().length > 0);
+  // Fallback: prendre les premières lignes qui ne contiennent pas "Points clés" ou "Sentiment"
+  const lines = text.split('\n').filter(line => {
+    const lowerLine = line.toLowerCase();
+    return !lowerLine.includes('points clés') && !lowerLine.includes('sentiment');
+  });
+  
   if (lines.length > 0) {
-    return lines[0].trim();
+    return lines.slice(0, 3).join(' ').trim();
   }
   
   return "Résumé non disponible";
 }
 
 function extractKeyPoints(text: string): string[] {
-  // Rechercher des sections de points clés
-  const keyPointsSection = text.match(/points clés\s*:([^]*?)(?=sentiment|$)/i) || 
-                          text.match(/points-clés\s*:([^]*?)(?=sentiment|$)/i);
+  // Chercher la section des points clés
+  const keyPointsMatch = text.match(/Points clés\s*:(.*?)(?=Sentiment|$)/is);
   
-  if (keyPointsSection && keyPointsSection[1]) {
-    // Extraire chaque point (format liste)
-    const points = keyPointsSection[1].split(/\n-|\n•|\n\*|\n\d+\./)
+  if (keyPointsMatch && keyPointsMatch[1]) {
+    // Extraire les points (format liste avec tirets)
+    const pointsText = keyPointsMatch[1].trim();
+    const points = pointsText.split(/\n-|\n•|\n\*/)
       .map(point => point.trim())
-      .filter(point => point.length > 0);
+      .filter(point => point.length > 0 && !point.startsWith('Points clés'));
     
     if (points.length > 0) {
       return points;
@@ -233,22 +264,15 @@ function extractKeyPoints(text: string): string[] {
     return listItems.map(item => item.replace(/^[-•*\s]+/, '').trim());
   }
   
-  // Rechercher des lignes numérotées
-  const numberedItems = text.match(/(?:^|\n)\d+\.\s*(.*?)(?=$|\n)/g);
-  if (numberedItems && numberedItems.length > 0) {
-    return numberedItems.map(item => item.replace(/^\d+\.\s*/, '').trim());
-  }
-  
-  // Si aucun point n'est trouvé, retourner un message par défaut
   return ["Points clés non disponibles"];
 }
 
 function extractSentiment(text: string): string {
-  // Rechercher des mentions explicites de sentiment
-  const sentimentSection = text.match(/sentiment\s*:([^]*?)(?=$)/i);
+  // Rechercher la mention explicite du sentiment
+  const sentimentMatch = text.match(/Sentiment\s*:(.*?)(?=$)/is);
   
-  if (sentimentSection && sentimentSection[1]) {
-    const sentimentText = sentimentSection[1].trim().toLowerCase();
+  if (sentimentMatch && sentimentMatch[1]) {
+    const sentimentText = sentimentMatch[1].trim().toLowerCase();
     
     if (sentimentText.includes("positif")) {
       return "positif";
@@ -260,21 +284,20 @@ function extractSentiment(text: string): string {
   
   // Rechercher des mots-clés de sentiment dans tout le texte
   const lowerText = text.toLowerCase();
-  if (lowerText.includes("sentiment") && lowerText.includes("positif") && !lowerText.includes("négatif")) {
+  if (lowerText.includes("sentiment") && lowerText.includes("positif")) {
     return "positif";
   }
-  else if (lowerText.includes("sentiment") && lowerText.includes("négatif") && !lowerText.includes("positif")) {
+  else if (lowerText.includes("sentiment") && lowerText.includes("négatif")) {
     return "négatif";
   }
   
-  // Par défaut, retourner neutre
   return "neutre";
 }
 
 // Pour compatibilité avec le code existant
 export const setHuggingFaceApiKey = (key: string) => {
-  console.log("Note: La clé API est maintenant fixe");
-  localStorage.setItem('huggingface_api_key', API_KEY);
+  console.log("Note: La clé API est maintenant fixe (Groq)");
+  localStorage.setItem('groq_api_key', API_KEY);
 };
 
 export const getHuggingFaceApiKey = (): string => {

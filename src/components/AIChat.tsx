@@ -44,7 +44,7 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
     setRetryMessage(null);
     
     try {
-      console.log("Envoi de la demande à l'IA...");
+      console.log("Envoi de la demande à l'IA via Groq...");
       
       const response = await chatWithAI(messageToSend, noteContent);
       console.log("Réponse reçue:", response);
@@ -87,7 +87,7 @@ const AIChat = ({ messages, onSendMessage, noteContent, onBack }: AIChatProps) =
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour à la note
         </Button>
-        <h2 className="text-lg font-semibold">Chat avec VoxNote IA</h2>
+        <h2 className="text-lg font-semibold">Chat avec VoxNote IA (Groq)</h2>
         <div className="w-20"></div> {/* Spacer pour centrer le titre */}
       </div>
 

@@ -22,7 +22,7 @@ interface SettingsDialogProps {
 
 const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   const [settings, setSettings] = useState<AppSettings>({
-    apiKey: "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", // Clé fixe
+    apiKey: "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", // Clé Groq fixe
     darkMode: false,
     language: "fr"
   });
@@ -34,7 +34,7 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
       const savedLanguage = localStorage.getItem("language") as "fr" | "en" || "fr";
       
       setSettings({
-        apiKey: "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", // Toujours utiliser la clé fixe
+        apiKey: "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", // Toujours utiliser la clé fixe
         darkMode: savedDarkMode,
         language: savedLanguage
       });
@@ -95,9 +95,9 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
           </div>
           
           <div className="space-y-1">
-            <Label>Clé API Hugging Face</Label>
+            <Label>Clé API Groq</Label>
             <p className="text-sm text-muted-foreground">
-              La clé API est configurée: {settings.apiKey.substring(0, 8)}...
+              La clé API Groq est configurée: {settings.apiKey.substring(0, 8)}...
             </p>
           </div>
         </div>
