@@ -126,7 +126,12 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
       ? noteContent.substring(0, 3000) + "..." 
       : noteContent;
     
-    const systemPrompt = "Tu es un assistant qui répond à des questions sur le contenu d'une note. Réponds uniquement en te basant sur les informations fournies dans la note. Si la réponse n'est pas dans le contenu, dis-le simplement.";
+    let systemPrompt = "Tu es un assistant qui répond à des questions sur le contenu d'une note. Réponds uniquement en te basant sur les informations fournies dans la note. Si la réponse n'est pas dans le contenu, dis-le simplement.";
+    
+    // Adapter le prompt système en fonction du contexte (note spécifique ou assistant général)
+    if (noteId === "general") {
+      systemPrompt = "Tu es DeepNote Assistant, un assistant IA conçu pour aider les utilisateurs à gérer leurs notes et leurs idées. Tu es serviable, précis et concis. Tu peux aider à créer du contenu pour des notes, suggérer des idées d'organisation, et répondre à diverses questions. Réponds toujours en français.";
+    }
     
     // Construire les messages avec historique si disponible
     const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
@@ -150,12 +155,20 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
       });
     }
     
+    // Construire le contenu du message en fonction du contexte
+    let userMessageContent = message;
+    
+    // Si c'est une note spécifique (pas l'assistant général), inclure le contenu de la note
+    if (noteId !== "general" && trimmedContent) {
+      userMessageContent = `Contexte (contenu de la note): "${trimmedContent}"
+
+Question: ${message}`;
+    }
+    
     // Ajouter le message actuel
     messages.push({
       role: "user", 
-      content: `Contexte (contenu de la note): "${trimmedContent}"
-
-Question: ${message}`
+      content: userMessageContent
     });
     
     const response = await fetch(

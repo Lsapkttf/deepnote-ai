@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -6,13 +7,23 @@ import NoteEditor from "@/components/NoteEditor";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import AIChat from "@/components/AIChat";
 import SettingsDialog from "@/components/SettingsDialog";
+import ThemeToggle from "@/components/ThemeToggle";
+import Logo from "@/components/Logo";
 import { Note, NoteColor } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
-import { Plus, Mic, Loader2 } from "lucide-react";
+import { Plus, Mic, Loader2, Search, Filter, LayoutGrid, LayoutList, Menu, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { checkApiKey } from "@/services/aiService";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 const Index = () => {
   const {
@@ -41,6 +52,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("notes");
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const isMobile = useIsMobile();
 
   // Vérifier si la clé API est configurée
@@ -179,13 +191,62 @@ const Index = () => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
+  // Composant de recherche personnalisé
+  const SearchBar = () => (
+    <div className="relative w-full max-w-sm">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder="Rechercher dans les notes..."
+        value={searchQuery}
+        onChange={(e) => handleSearch(e.target.value)}
+        className="pl-10 pr-4 w-full"
+      />
+      {searchQuery && (
+        <button
+          onClick={() => handleSearch("")}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+
+  // Appbar personnalisée
+  const AppBar = () => (
+    <div className="flex items-center justify-between w-full px-4 h-14 border-b">
+      <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="md:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <Logo />
+      </div>
+
+      <div className="hidden md:block flex-1 max-w-sm mx-auto">
+        <SearchBar />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setSettingsDialogOpen(true)}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <Header 
-        toggleSidebar={toggleSidebar} 
-        onSearch={handleSearch}
-        onOpenSettings={() => setSettingsDialogOpen(true)}
-      />
+      <AppBar />
       
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -199,6 +260,10 @@ const Index = () => {
         <main className="flex-1 overflow-hidden md:ml-64">
           {view === "list" && (
             <div className="p-4 h-full flex flex-col overflow-hidden">
+              <div className="md:hidden mb-4">
+                <SearchBar />
+              </div>
+              
               <div className="mb-4 flex justify-between items-center">
                 <h2 className="text-xl font-bold capitalize">
                   {searchQuery ? `Résultats pour "${searchQuery}"` :
@@ -208,6 +273,55 @@ const Index = () => {
                 </h2>
                 
                 <div className="flex space-x-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filtres
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        className="cursor-pointer"
+                        onClick={() => setSelectedCategory("notes")}
+                      >
+                        Toutes les notes
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="cursor-pointer"
+                        onClick={() => setSelectedCategory("recent")}
+                      >
+                        Notes récentes
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="cursor-pointer"
+                        onClick={() => setSelectedCategory("archive")}
+                      >
+                        Archive
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <div className="flex border rounded-md overflow-hidden">
+                    <Button 
+                      variant={viewMode === "grid" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("grid")}
+                      className="rounded-none border-0"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={viewMode === "list" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                      className="rounded-none border-0"
+                    >
+                      <LayoutList className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -256,11 +370,15 @@ const Index = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className={viewMode === "grid" 
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
+                    : "flex flex-col gap-3"
+                  }>
                     {sortedNotes.map((note) => (
                       <NoteCard
                         key={note.id}
                         note={note}
+                        listMode={viewMode === "list"}
                         onClick={() => handleNoteClick(note)}
                         onPin={() => togglePinNote(note.id)}
                         onDelete={() => deleteNote(note.id)}

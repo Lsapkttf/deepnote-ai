@@ -91,34 +91,53 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased transition-colors duration-200;
   }
 }
 
 .note-card {
-  @apply p-4 rounded-lg shadow-sm;
+  @apply p-4 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md;
 }
 
 .note-card-yellow {
-  @apply bg-note-yellow;
+  @apply bg-note-yellow dark:bg-note-yellow/90;
 }
 
 .note-card-red {
-  @apply bg-note-red;
+  @apply bg-note-red dark:bg-note-red/90;
 }
 
 .note-card-green {
-  @apply bg-note-green;
+  @apply bg-note-green dark:bg-note-green/90;
 }
 
 .note-card-blue {
-  @apply bg-note-blue;
+  @apply bg-note-blue dark:bg-note-blue/90;
 }
 
 .note-card-purple {
-  @apply bg-note-purple;
+  @apply bg-note-purple dark:bg-note-purple/90;
 }
 
 .note-card-orange {
-  @apply bg-note-orange;
+  @apply bg-note-orange dark:bg-note-orange/90;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-in-out;
 }

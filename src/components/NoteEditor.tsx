@@ -6,15 +6,31 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { analyzeText } from "@/services/aiService";
+import { analyzeText, chatWithAI } from "@/services/aiService";
 import { toast } from "sonner";
-import { CirclePlus, Save, SquarePen, MessageCircle, ArrowLeft, BrainCircuit } from "lucide-react";
+import { 
+  CirclePlus, 
+  Save, 
+  SquarePen, 
+  MessageCircle, 
+  ArrowLeft, 
+  BrainCircuit, 
+  Sparkles, 
+  Loader2,
+  MoreVertical
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import AIChat from "./AIChat";
 
 interface NoteEditorProps {
@@ -40,7 +56,10 @@ const NoteEditor = ({
   const [content, setContent] = useState("");
   const [color, setColor] = useState<NoteColor>("yellow");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isModifying, setIsModifying] = useState(false);
   const [analysisTab, setAnalysisTab] = useState("summary");
+  const [modifyPrompt, setModifyPrompt] = useState("");
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -90,9 +109,48 @@ const NoteEditor = ({
     }
   };
 
+  const handleModifyWithAI = async () => {
+    if (!modifyPrompt.trim()) {
+      toast.error("Veuillez saisir une instruction pour l'IA");
+      return;
+    }
+
+    try {
+      setIsModifying(true);
+      toast.info("Modification en cours...");
+      
+      const prompt = `Voici le contenu actuel de ma note:
+"${content}"
+
+Je voudrais que tu ${modifyPrompt}. Renvoie uniquement le contenu modifié, sans explications ou commentaires supplémentaires.`;
+      
+      const modifiedContent = await chatWithAI(prompt, content, note?.id);
+      setContent(modifiedContent);
+      setIsPopoverOpen(false);
+      setModifyPrompt("");
+      
+      toast.success("Note modifiée par l'IA");
+    } catch (error) {
+      console.error("Erreur de modification:", error);
+      toast.error("Erreur lors de la modification par l'IA");
+    } finally {
+      setIsModifying(false);
+    }
+  };
+
   const handleColorChange = (newColor: NoteColor) => {
     setColor(newColor);
   };
+
+  const AIModificationSuggestions = [
+    "résumes ce texte en 3 points clés",
+    "rédiges ce texte dans un style plus professionnel",
+    "corriges les fautes d'orthographe et de grammaire",
+    "améliores la clarté de ce texte",
+    "reformules pour rendre plus concis",
+    "ajoutes une introduction et une conclusion",
+    "transformes en une liste à puces organisée"
+  ];
 
   return (
     <div className={`h-full flex flex-col bg-note-${color}/20`}>
@@ -113,6 +171,69 @@ const NoteEditor = ({
             <BrainCircuit className="h-4 w-4 mr-2" />
             {isAnalyzing ? "Analyse en cours..." : "Analyser avec IA"}
           </Button>
+
+          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center"
+                disabled={isModifying || !content.trim()}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {isModifying ? "Modification..." : "Modifier avec IA"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <h4 className="font-medium">Modifier cette note avec l'IA</h4>
+                <p className="text-sm text-muted-foreground">
+                  Dites à l'IA comment vous souhaitez modifier votre note.
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="ex: résume ce texte en points clés"
+                    value={modifyPrompt}
+                    onChange={(e) => setModifyPrompt(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {AIModificationSuggestions.map((suggestion, i) => (
+                      <button
+                        key={i}
+                        className="text-xs text-primary hover:underline"
+                        onClick={() => setModifyPrompt(suggestion)}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setIsPopoverOpen(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={handleModifyWithAI}
+                    disabled={!modifyPrompt.trim() || isModifying}
+                  >
+                    {isModifying ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                        Modification...
+                      </>
+                    ) : (
+                      "Appliquer"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Button
             variant="outline"
