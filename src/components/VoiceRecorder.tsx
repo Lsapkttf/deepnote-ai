@@ -1,12 +1,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Play, Pause, Loader2 } from "lucide-react";
+import FuturisticButton from "@/components/FuturisticButton";
+import { Mic, Square, Play, Pause, Save, X } from "lucide-react";
 import { startRecording, stopRecording, RecordingState } from "@/services/audioService";
 import { Progress } from "@/components/ui/progress";
-import { transcribeAudio } from "@/services/aiService";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 
 interface VoiceRecorderProps {
   onTranscriptionComplete: (transcription: string) => void;
@@ -24,23 +25,28 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
   const [recordingTime, setRecordingTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [partialTranscription, setPartialTranscription] = useState("");
-  const [finalTranscription, setFinalTranscription] = useState("");
-
+  const [manualTranscription, setManualTranscription] = useState("");
+  const [maxDuration] = useState(120); // 2 minutes max
+  
   useEffect(() => {
     let interval: number;
     
     if (recordingState.isRecording) {
       interval = window.setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime(prev => {
+          if (prev >= maxDuration) {
+            handleStopRecording();
+            return prev;
+          }
+          return prev + 1;
+        });
       }, 1000);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [recordingState.isRecording]);
+  }, [recordingState.isRecording, maxDuration]);
 
   useEffect(() => {
     if (recordingState.audioURL) {
@@ -61,18 +67,12 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
 
   const handleStartRecording = async () => {
     setRecordingTime(0);
-    setPartialTranscription("");
-    setFinalTranscription("");
+    setManualTranscription("");
     await startRecording(recordingState, setRecordingState);
   };
 
   const handleStopRecording = () => {
     stopRecording(recordingState, setRecordingState);
-    
-    // Start auto-transcription after stopping
-    setTimeout(() => {
-      handleTranscribe();
-    }, 500);
   };
 
   const togglePlayback = () => {
@@ -87,32 +87,11 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
     }
   };
 
-  const handleTranscribe = async () => {
-    if (!recordingState.audioChunks.length) {
-      toast.error("Aucun enregistrement à transcrire");
-      return;
-    }
-    
-    setIsTranscribing(true);
-    setPartialTranscription("Transcription en cours...");
-    
-    try {
-      const audioBlob = new Blob(recordingState.audioChunks, { type: 'audio/wav' });
-      const transcription = await transcribeAudio(audioBlob);
-      
-      if (transcription) {
-        setFinalTranscription(transcription);
-        onTranscriptionComplete(transcription);
-      } else {
-        setPartialTranscription("");
-        toast.error("La transcription n'a pas pu être générée");
-      }
-    } catch (error) {
-      console.error("Erreur de transcription:", error);
-      setPartialTranscription("");
-      toast.error("Erreur lors de la transcription");
-    } finally {
-      setIsTranscribing(false);
+  const handleSaveNote = () => {
+    if (manualTranscription.trim()) {
+      onTranscriptionComplete(manualTranscription);
+    } else {
+      toast.error("Veuillez ajouter une transcription avant de sauvegarder");
     }
   };
 
@@ -154,18 +133,25 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
             </div>
             
             {recordingState.isRecording && (
-              <Progress value={Math.min(recordingTime, 300) / 3} className="h-2" />
+              <>
+                <Progress value={(recordingTime / maxDuration) * 100} className="h-2" />
+                <div className="text-xs text-muted-foreground text-center">
+                  Temps restant: {formatTime(maxDuration - recordingTime)}
+                </div>
+              </>
             )}
             
             <div className="flex justify-center space-x-4 my-4">
               {!recordingState.isRecording && !recordingState.audioURL && (
-                <Button 
+                <FuturisticButton
+                  gradient
+                  glow 
                   size="lg" 
-                  className="rounded-full w-16 h-16 bg-red-500 hover:bg-red-600 text-white"
+                  className="rounded-full w-16 h-16 text-white"
                   onClick={handleStartRecording}
                 >
                   <Mic className="h-6 w-6" />
-                </Button>
+                </FuturisticButton>
               )}
               
               {recordingState.isRecording && (
@@ -195,12 +181,17 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
               )}
             </div>
 
-            {(partialTranscription || finalTranscription) && (
-              <div className="mt-4 p-4 rounded-md bg-muted/40 max-h-[200px] overflow-y-auto">
-                <h3 className="text-sm font-medium mb-2">Transcription:</h3>
-                <p className="text-sm whitespace-pre-line">
-                  {finalTranscription || partialTranscription}
-                </p>
+            {recordingState.audioURL && (
+              <div className="mt-2">
+                <label className="block text-sm font-medium mb-2">
+                  Transcription manuelle:
+                </label>
+                <Textarea
+                  placeholder="Écrivez ici ce que vous avez dit dans l'enregistrement..."
+                  className="resize-none h-32"
+                  value={manualTranscription}
+                  onChange={(e) => setManualTranscription(e.target.value)}
+                />
               </div>
             )}
           </div>
@@ -210,22 +201,22 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
           <Button
             variant="outline"
             onClick={onCancel}
+            className="px-4"
           >
+            <X className="h-4 w-4 mr-2" />
             Annuler
           </Button>
           
-          <Button
-            onClick={handleTranscribe}
-            disabled={!recordingState.audioURL || isTranscribing}
-            className="relative"
-          >
-            {isTranscribing ? (
-              <span className="flex items-center">
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Transcription...
-              </span>
-            ) : finalTranscription ? "Utiliser cette transcription" : "Transcrire"}
-          </Button>
+          {recordingState.audioURL && (
+            <FuturisticButton
+              gradient
+              onClick={handleSaveNote}
+              className="px-4"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Enregistrer
+            </FuturisticButton>
+          )}
         </CardFooter>
       </Card>
     </div>

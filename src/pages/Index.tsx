@@ -1,6 +1,4 @@
-
 import { useState, useEffect } from "react";
-import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
@@ -11,8 +9,21 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import { Note, NoteColor } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
-import { Plus, Mic, Loader2, Search, Filter, LayoutGrid, LayoutList, Menu, Settings, X } from "lucide-react";
+import { 
+  Plus, 
+  Mic, 
+  Loader2, 
+  Search, 
+  Filter, 
+  LayoutGrid, 
+  LayoutList, 
+  Menu, 
+  Settings, 
+  X, 
+  ArrowLeft
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import FuturisticButton from "@/components/FuturisticButton";
 import { toast } from "sonner";
 import { checkApiKey } from "@/services/aiService";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -55,20 +66,17 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const isMobile = useIsMobile();
 
-  // Vérifier si la clé API est configurée
   useEffect(() => {
     const hasApiKey = checkApiKey();
     if (!hasApiKey) {
       setSettingsDialogOpen(true);
     }
     
-    // Appliquer le mode sombre si configuré
     if (localStorage.getItem("darkMode") === "true") {
       document.documentElement.classList.add("dark");
     }
   }, []);
 
-  // Charger les notes depuis Supabase
   useEffect(() => {
     if (selectedCategory === 'archive') {
       fetchArchivedNotes();
@@ -81,20 +89,21 @@ const Index = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
   const handleNewTextNote = () => {
     setCurrentNote(null);
     setView("editor");
-    if (isMobile) setSidebarOpen(false);
   };
 
   const handleNewVoiceNote = () => {
     setView("recorder");
-    if (isMobile) setSidebarOpen(false);
   };
 
   const handleSelectCategory = (category: string) => {
     setSelectedCategory(category);
-    if (isMobile) setSidebarOpen(false);
   };
 
   const handleSaveNote = async (title: string, content: string, color: NoteColor) => {
@@ -155,14 +164,12 @@ const Index = () => {
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Revenir à la liste des notes lors de la recherche
     if (view !== "list") {
       setView("list");
     }
   };
 
   const filteredNotes = notes.filter(note => {
-    // Filtre par catégorie
     if (selectedCategory === "notes" && note.archived) return false;
     if (selectedCategory === "recent") {
       const oneWeekAgo = new Date();
@@ -171,7 +178,6 @@ const Index = () => {
     }
     if (selectedCategory === "archive" && !note.archived) return false;
     
-    // Filtre par recherche
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -184,14 +190,16 @@ const Index = () => {
     return true;
   });
   
-  // Trier les notes pour afficher les épinglées en premier
   const sortedNotes = [...filteredNotes].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  // Composant de recherche personnalisé
+  const handleBackToList = () => {
+    setView("list");
+  };
+
   const SearchBar = () => (
     <div className="relative w-full max-w-sm">
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -199,7 +207,7 @@ const Index = () => {
         placeholder="Rechercher dans les notes..."
         value={searchQuery}
         onChange={(e) => handleSearch(e.target.value)}
-        className="pl-10 pr-4 w-full"
+        className="pl-10 pr-9 w-full bg-background/80 backdrop-blur-sm border-muted"
       />
       {searchQuery && (
         <button
@@ -212,9 +220,8 @@ const Index = () => {
     </div>
   );
 
-  // Appbar personnalisée
   const AppBar = () => (
-    <div className="flex items-center justify-between w-full px-4 h-14 border-b">
+    <div className="sticky top-0 z-10 flex items-center justify-between w-full px-4 h-16 border-b backdrop-blur-sm bg-background/80">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -224,6 +231,18 @@ const Index = () => {
         >
           <Menu className="h-5 w-5" />
         </Button>
+        
+        {view !== "list" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBackToList}
+            className="mr-1"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+        
         <Logo />
       </div>
 
@@ -251,20 +270,21 @@ const Index = () => {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           isOpen={sidebarOpen}
+          onClose={closeSidebar}
           onNewTextNote={handleNewTextNote}
           onNewVoiceNote={handleNewVoiceNote}
           onSelectCategory={handleSelectCategory}
           selectedCategory={selectedCategory}
         />
         
-        <main className="flex-1 overflow-hidden md:ml-64">
+        <main className="flex-1 overflow-hidden md:ml-72">
           {view === "list" && (
             <div className="p-4 h-full flex flex-col overflow-hidden">
               <div className="md:hidden mb-4">
                 <SearchBar />
               </div>
               
-              <div className="mb-4 flex justify-between items-center">
+              <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h2 className="text-xl font-bold capitalize">
                   {searchQuery ? `Résultats pour "${searchQuery}"` :
                    selectedCategory === "notes" ? "Mes notes" : 
@@ -272,15 +292,15 @@ const Index = () => {
                    "Archive"}
                 </h2>
                 
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2 sm:flex-nowrap">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="h-9">
                         <Filter className="h-4 w-4 mr-2" />
                         Filtres
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuItem 
                         className="cursor-pointer"
                         onClick={() => setSelectedCategory("notes")}
@@ -322,26 +342,30 @@ const Index = () => {
                     </Button>
                   </div>
                   
-                  <Button 
+                  <FuturisticButton 
                     variant="outline" 
                     size="sm"
                     onClick={handleNewVoiceNote}
+                    className="h-9"
                   >
                     <Mic className="h-4 w-4 mr-2" />
                     Note vocale
-                  </Button>
+                  </FuturisticButton>
                   
-                  <Button 
+                  <FuturisticButton 
                     size="sm"
+                    gradient
+                    glow
                     onClick={handleNewTextNote}
+                    className="h-9"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Nouvelle note
-                  </Button>
+                  </FuturisticButton>
                 </div>
               </div>
               
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto pb-4">
                 {isLoading ? (
                   <div className="h-full flex flex-col items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -358,14 +382,14 @@ const Index = () => {
                     </p>
                     {(selectedCategory !== "archive" && !searchQuery) && (
                       <div className="flex space-x-4">
-                        <Button onClick={handleNewTextNote}>
+                        <FuturisticButton gradient glow onClick={handleNewTextNote}>
                           <Plus className="h-4 w-4 mr-2" />
                           Nouvelle note
-                        </Button>
-                        <Button variant="outline" onClick={handleNewVoiceNote}>
+                        </FuturisticButton>
+                        <FuturisticButton variant="outline" onClick={handleNewVoiceNote}>
                           <Mic className="h-4 w-4 mr-2" />
                           Note vocale
-                        </Button>
+                        </FuturisticButton>
                       </div>
                     )}
                   </div>
@@ -396,7 +420,7 @@ const Index = () => {
               note={currentNote}
               onSave={handleSaveNote}
               onUpdate={handleUpdateNote}
-              onBack={() => setView("list")}
+              onBack={handleBackToList}
               aiAnalysis={aiAnalysis}
               setAIAnalysis={setAIAnalysis}
               onStartChat={handleStartChat}
