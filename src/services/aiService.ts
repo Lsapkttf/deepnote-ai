@@ -129,9 +129,9 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
     const systemPrompt = "Tu es un assistant qui répond à des questions sur le contenu d'une note. Réponds uniquement en te basant sur les informations fournies dans la note. Si la réponse n'est pas dans le contenu, dis-le simplement.";
     
     // Construire les messages avec historique si disponible
-    const messages = [
+    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
       {
-        role: "system" as const,
+        role: "system",
         content: systemPrompt
       }
     ];
@@ -144,7 +144,7 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
       
       recentHistory.forEach(msg => {
         messages.push({
-          role: msg.role,
+          role: msg.role as 'user' | 'assistant', // Conversion explicite du type
           content: msg.content
         });
       });
@@ -152,7 +152,7 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
     
     // Ajouter le message actuel
     messages.push({
-      role: "user" as const, 
+      role: "user", 
       content: `Contexte (contenu de la note): "${trimmedContent}"
 
 Question: ${message}`
