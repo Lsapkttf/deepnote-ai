@@ -1,6 +1,6 @@
 
 import { cn } from "@/lib/utils";
-import { FuturisticButton } from "@/components/FuturisticButton";
+import FuturisticButton from "@/components/FuturisticButton";
 import { Separator } from "@/components/ui/separator";
 import { SquarePen, Mic, ArchiveIcon, Clock, BookOpen, X } from "lucide-react";
 import { useEffect, useRef } from "react";
