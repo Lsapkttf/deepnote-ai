@@ -3,11 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import FuturisticButton from "@/components/FuturisticButton";
 import { Mic, Square, Play, Pause, Save, X } from "lucide-react";
-import { startRecording, stopRecording, RecordingState } from "@/services/audioService";
+import { RecordingState } from "@/services/audioService";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 
 interface VoiceRecorderProps {
   onTranscriptionComplete: (transcription: string) => void;
@@ -15,23 +14,69 @@ interface VoiceRecorderProps {
 }
 
 const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps) => {
-  const [recordingState, setRecordingState] = useState<RecordingState>({
-    isRecording: false,
-    audioURL: null,
-    mediaRecorder: null,
-    audioChunks: []
-  });
-  
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-  const [manualTranscription, setManualTranscription] = useState("");
   const [maxDuration] = useState(120); // 2 minutes max
+  const [transcription, setTranscription] = useState("");
   
+  // Web Speech API References
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  
+  // Initialize Web Speech API
+  useEffect(() => {
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'fr-FR'; // Définir la langue sur le français
+      
+      recognitionRef.current.onresult = (event) => {
+        let finalTranscript = '';
+        
+        for (let i = 0; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          }
+        }
+        
+        if (finalTranscript) {
+          setTranscription(prev => prev + finalTranscript);
+        }
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error("Erreur de reconnaissance vocale:", event.error);
+        toast.error("Erreur de reconnaissance vocale");
+      };
+    } else {
+      toast.error("La reconnaissance vocale n'est pas supportée par votre navigateur");
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
   useEffect(() => {
     let interval: number;
     
-    if (recordingState.isRecording) {
+    if (isRecording) {
       interval = window.setInterval(() => {
         setRecordingTime(prev => {
           if (prev >= maxDuration) {
@@ -46,52 +91,105 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [recordingState.isRecording, maxDuration]);
+  }, [isRecording, maxDuration]);
 
   useEffect(() => {
-    if (recordingState.audioURL) {
-      const audio = new Audio(recordingState.audioURL);
-      setAudioElement(audio);
+    if (audioUrl) {
+      audioElementRef.current = new Audio(audioUrl);
       
-      audio.addEventListener('ended', () => {
+      audioElementRef.current.addEventListener('ended', () => {
         setIsPlaying(false);
       });
       
       return () => {
-        audio.removeEventListener('ended', () => {
-          setIsPlaying(false);
-        });
+        if (audioElementRef.current) {
+          audioElementRef.current.removeEventListener('ended', () => {
+            setIsPlaying(false);
+          });
+        }
       };
     }
-  }, [recordingState.audioURL]);
+  }, [audioUrl]);
 
   const handleStartRecording = async () => {
-    setRecordingTime(0);
-    setManualTranscription("");
-    await startRecording(recordingState, setRecordingState);
+    try {
+      setRecordingTime(0);
+      setTranscription("");
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioChunks: Blob[] = [];
+      
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = audioChunks;
+      
+      mediaRecorder.addEventListener("dataavailable", (event) => {
+        audioChunks.push(event.data);
+      });
+      
+      mediaRecorder.addEventListener("stop", () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+        
+        // Arrêter la reconnaissance vocale à la fin de l'enregistrement audio
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+        }
+      });
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      
+      // Démarrer la reconnaissance vocale en temps réel
+      if (recognitionRef.current) {
+        recognitionRef.current.start();
+        toast.success("Reconnaissance vocale démarrée");
+      }
+      
+      toast.success("Enregistrement démarré");
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement:", error);
+      toast.error("Impossible d'accéder au microphone");
+    }
   };
 
   const handleStopRecording = () => {
-    stopRecording(recordingState, setRecordingState);
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      
+      // Arrêter tous les flux audio
+      if (mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Arrêter la reconnaissance vocale
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      
+      setIsRecording(false);
+      toast.success("Enregistrement terminé");
+    }
   };
 
   const togglePlayback = () => {
-    if (!audioElement) return;
+    if (!audioElementRef.current) return;
     
     if (isPlaying) {
-      audioElement.pause();
+      audioElementRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioElement.play();
+      audioElementRef.current.play();
       setIsPlaying(true);
     }
   };
 
   const handleSaveNote = () => {
-    if (manualTranscription.trim()) {
-      onTranscriptionComplete(manualTranscription);
+    if (transcription.trim()) {
+      onTranscriptionComplete(transcription);
     } else {
-      toast.error("Veuillez ajouter une transcription avant de sauvegarder");
+      toast.error("Aucune transcription disponible");
     }
   };
 
@@ -114,14 +212,14 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
         <CardContent className="pt-6 pb-4">
           <div className="flex flex-col space-y-4">
             <div className="flex items-center justify-center space-x-2">
-              {recordingState.isRecording ? (
+              {isRecording ? (
                 <>
                   <span className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
                     <span className="font-medium">Enregistrement en cours...</span>
                   </span>
                 </>
-              ) : recordingState.audioURL ? (
+              ) : audioUrl ? (
                 <span className="font-medium">Enregistrement terminé</span>
               ) : (
                 <span className="font-medium">Prêt à enregistrer</span>
@@ -132,7 +230,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
               {formatTime(recordingTime)}
             </div>
             
-            {recordingState.isRecording && (
+            {isRecording && (
               <>
                 <Progress value={(recordingTime / maxDuration) * 100} className="h-2" />
                 <div className="text-xs text-muted-foreground text-center">
@@ -142,7 +240,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
             )}
             
             <div className="flex justify-center space-x-4 my-4">
-              {!recordingState.isRecording && !recordingState.audioURL && (
+              {!isRecording && !audioUrl && (
                 <FuturisticButton
                   gradient
                   glow 
@@ -154,7 +252,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
                 </FuturisticButton>
               )}
               
-              {recordingState.isRecording && (
+              {isRecording && (
                 <Button 
                   size="lg"
                   variant="outline" 
@@ -165,7 +263,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
                 </Button>
               )}
               
-              {!recordingState.isRecording && recordingState.audioURL && (
+              {!isRecording && audioUrl && (
                 <Button 
                   size="lg"
                   variant="outline" 
@@ -181,17 +279,14 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
               )}
             </div>
 
-            {recordingState.audioURL && (
+            {(isRecording || transcription) && (
               <div className="mt-2">
                 <label className="block text-sm font-medium mb-2">
-                  Transcription manuelle:
+                  Transcription en temps réel:
                 </label>
-                <Textarea
-                  placeholder="Écrivez ici ce que vous avez dit dans l'enregistrement..."
-                  className="resize-none h-32"
-                  value={manualTranscription}
-                  onChange={(e) => setManualTranscription(e.target.value)}
-                />
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-md p-3 overflow-y-auto h-32 text-sm">
+                  {transcription || "Parlez pour voir la transcription apparaître ici..."}
+                </div>
               </div>
             )}
           </div>
@@ -207,7 +302,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
             Annuler
           </Button>
           
-          {recordingState.audioURL && (
+          {(audioUrl && transcription) && (
             <FuturisticButton
               gradient
               onClick={handleSaveNote}

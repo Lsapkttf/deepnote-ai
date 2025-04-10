@@ -4,11 +4,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VoxNote - Notes Vocales avec IA</title>
+    <title>DeepNote - Notes Vocales avec IA</title>
     <meta name="description" content="Application de prise de notes vocales et textuelles avec IA pour transcription et analyse" />
-    <meta name="author" content="VoxNote" />
+    <meta name="author" content="DeepNote" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3a86ff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="DeepNote" />
+    
+    <!-- Favicon and App Icons -->
+    <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
 
-    <meta property="og:title" content="VoxNote - Notes Vocales avec IA" />
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="DeepNote - Notes Vocales avec IA" />
     <meta property="og:description" content="Application de prise de notes vocales et textuelles avec IA pour transcription et analyse" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
@@ -23,5 +37,19 @@
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, function(err) {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
