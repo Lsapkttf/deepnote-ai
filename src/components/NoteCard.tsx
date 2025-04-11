@@ -1,105 +1,176 @@
 
 import { Note } from "@/types/note";
 import { cn } from "@/lib/utils";
-import { MoreHorizontal, Pin, Mic, Archive, Trash } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Mic, Pin, Archive, Trash, MoreVertical } from "lucide-react";
+import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NoteCardProps {
   note: Note;
+  listMode?: boolean;
   onClick: () => void;
   onPin: () => void;
   onDelete: () => void;
   onArchive: () => void;
-  listMode?: boolean; // Added this property
 }
 
-const NoteCard = ({ note, onClick, onPin, onDelete, onArchive, listMode = false }: NoteCardProps) => {
-  const getPreviewText = () => {
-    if (note.type === 'voice' && note.transcription) {
-      return note.transcription;
-    }
-    return note.content;
-  };
-
-  return (
-    <div 
-      className={cn(
-        "note-card group relative rounded-lg p-4 shadow-sm transition-all hover:shadow-md",
-        `bg-note-${note.color}`,
-        note.pinned && "ring-2 ring-primary",
-        listMode && "flex flex-row items-center gap-4"
-      )}
-      onClick={onClick}
-    >
-      {note.pinned && (
-        <div className={cn("absolute top-2 right-2", listMode && "static mr-2")}>
-          <Pin className="h-4 w-4 fill-current" />
+const NoteCard = ({
+  note,
+  listMode = false,
+  onClick,
+  onPin,
+  onDelete,
+  onArchive,
+}: NoteCardProps) => {
+  const [showActions, setShowActions] = useState(false);
+  
+  const formattedDate = formatDistanceToNow(new Date(note.updatedAt || note.createdAt), {
+    addSuffix: true,
+    locale: fr,
+  });
+  
+  // Préparer le contenu à afficher (limité en longueur)
+  const displayContent = note.type === 'voice' && note.transcription
+    ? note.transcription
+    : note.content;
+  
+  const truncatedContent = displayContent.length > 150
+    ? `${displayContent.substring(0, 150)}...`
+    : displayContent;
+  
+  if (listMode) {
+    return (
+      <div
+        onClick={onClick}
+        className={cn(
+          "note-card transition-all duration-200 hover:shadow-md rounded-lg border border-border",
+          `note-card-${note.color}`,
+          note.pinned && "ring-2 ring-primary/50",
+          "flex items-center gap-3 pr-2"
+        )}
+      >
+        <div className="flex-1 min-w-0 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            {note.type === 'voice' && (
+              <Mic className="h-3.5 w-3.5 text-foreground/70" />
+            )}
+            <h3 className="font-medium truncate">{note.title}</h3>
+            {note.pinned && (
+              <Pin className="h-3.5 w-3.5 fill-foreground/70 text-foreground/70" />
+            )}
+          </div>
+          <p className="text-sm text-foreground/80 line-clamp-1">{truncatedContent}</p>
+          <p className="text-xs text-foreground/60 mt-1">{formattedDate}</p>
         </div>
-      )}
-      
-      <div className={cn(
-        "flex justify-between items-start", 
-        listMode && "flex-1"
-      )}>
-        <h3 className="font-medium text-lg truncate">{note.title || "Sans titre"}</h3>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+            <button className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-foreground/10">
+              <MoreVertical className="h-4 w-4" />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onPin(); }}>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onPin();
+            }}>
+              <Pin className="mr-2 h-4 w-4" />
               {note.pinned ? "Désépingler" : "Épingler"}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(); }}>
-              <Archive className="h-4 w-4 mr-2" />
-              Archiver
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onArchive();
+            }}>
+              <Archive className="mr-2 h-4 w-4" />
+              {note.archived ? "Désarchiver" : "Archiver"}
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
               className="text-destructive focus:text-destructive"
             >
-              <Trash className="h-4 w-4 mr-2" />
+              <Trash className="mr-2 h-4 w-4" />
               Supprimer
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+    );
+  }
+  
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+      onTouchStart={() => setShowActions(true)}
+      className={cn(
+        "note-card relative group h-full",
+        `note-card-${note.color}`,
+        note.pinned && "ring-2 ring-primary/50"
+      )}
+    >
+      {note.pinned && (
+        <Pin className="absolute top-2 right-2 h-4 w-4 fill-foreground/70 text-foreground/70" />
+      )}
       
-      <div className={cn(
-        "mt-2 text-sm line-clamp-3 min-h-[3rem]",
-        listMode && "hidden md:block md:w-1/3"
-      )}>
-        {getPreviewText()}
-      </div>
-      
-      <div className={cn(
-        "mt-3 text-xs text-muted-foreground flex justify-between items-center",
-        listMode && "ml-auto"
-      )}>
-        <span>
-          {formatDistanceToNow(new Date(note.createdAt), { 
-            addSuffix: true,
-            locale: fr
-          })}
-        </span>
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-2 mb-1">
+          {note.type === 'voice' && (
+            <Mic className="h-3.5 w-3.5 text-foreground/70" />
+          )}
+          <h3 className="font-medium truncate">{note.title}</h3>
+        </div>
         
-        {note.type === 'voice' && (
-          <div className="flex items-center text-xs text-muted-foreground ml-3">
-            <Mic className="h-3 w-3 mr-1" />
-            <span>Note vocale</span>
+        <p className="text-sm text-foreground/80 line-clamp-4 flex-1">{truncatedContent}</p>
+        
+        <div className="mt-2 flex items-center justify-between">
+          <p className="text-xs text-foreground/60">{formattedDate}</p>
+          
+          <div className={cn(
+            "flex gap-0.5",
+            showActions ? "opacity-100" : "opacity-0 lg:group-hover:opacity-100"
+          )}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPin();
+              }}
+              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-foreground/10"
+            >
+              <Pin className="h-3.5 w-3.5" />
+            </button>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive();
+              }}
+              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-foreground/10"
+            >
+              <Archive className="h-3.5 w-3.5" />
+            </button>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-foreground/10 text-destructive"
+            >
+              <Trash className="h-3.5 w-3.5" />
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

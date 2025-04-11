@@ -43,6 +43,14 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Note colors */
+    --note-yellow: 45 100% 96%;
+    --note-red: 0 100% 95%;
+    --note-green: 142 76% 95%;
+    --note-blue: 211 100% 95%;
+    --note-purple: 270 76% 95%;
+    --note-orange: 25 100% 95%;
   }
 
   .dark {
@@ -82,6 +90,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Dark mode note colors */
+    --note-yellow: 45 70% 15%;
+    --note-red: 0 70% 15%;
+    --note-green: 142 46% 15%;
+    --note-blue: 211 70% 15%;
+    --note-purple: 270 46% 15%;
+    --note-orange: 25 70% 15%;
   }
 }
 
@@ -92,6 +108,13 @@
 
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-200;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+  
+  /* Pour empêcher le zoom sur iOS lors du focus des inputs */
+  input, textarea, select, button {
+    font-size: 16px;
   }
 }
 
@@ -100,27 +123,27 @@
 }
 
 .note-card-yellow {
-  @apply bg-note-yellow dark:bg-note-yellow/90;
+  @apply bg-note-yellow dark:bg-note-yellow;
 }
 
 .note-card-red {
-  @apply bg-note-red dark:bg-note-red/90;
+  @apply bg-note-red dark:bg-note-red;
 }
 
 .note-card-green {
-  @apply bg-note-green dark:bg-note-green/90;
+  @apply bg-note-green dark:bg-note-green;
 }
 
 .note-card-blue {
-  @apply bg-note-blue dark:bg-note-blue/90;
+  @apply bg-note-blue dark:bg-note-blue;
 }
 
 .note-card-purple {
-  @apply bg-note-purple dark:bg-note-purple/90;
+  @apply bg-note-purple dark:bg-note-purple;
 }
 
 .note-card-orange {
-  @apply bg-note-orange dark:bg-note-orange/90;
+  @apply bg-note-orange dark:bg-note-orange;
 }
 
 /* Animations */
@@ -134,10 +157,39 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
 .fade-in {
   animation: fadeIn 0.3s ease-in-out;
 }
 
 .slide-up {
   animation: slideUp 0.3s ease-in-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Personnalisations Mobile */
+@media (max-width: 640px) {
+  .fixed-mobile-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 1rem);
+  }
 }

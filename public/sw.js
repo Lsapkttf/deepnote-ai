@@ -1,5 +1,5 @@
 
-// Service Worker for DeepNote PWA
+// Service Worker pour DeepNote PWA
 const CACHE_NAME = 'deepnote-cache-v1';
 const urlsToCache = [
   '/',
@@ -18,6 +18,25 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
+  // Force l'activation immédiate
+  self.skipWaiting();
+});
+
+// Activation du service worker
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  // Prendre contrôle immédiatement de toutes les pages
+  self.clients.claim();
 });
 
 // Intercepter les requêtes réseau
@@ -29,10 +48,14 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        return fetch(event.request).then(
+        
+        // Cloner la requête
+        const fetchRequest = event.request.clone();
+
+        return fetch(fetchRequest).then(
           response => {
-            // Ne pas mettre en cache les réponses si ce n'est pas un clone valide
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            // Vérifier si la réponse est valide
+            if(!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
@@ -41,28 +64,24 @@ self.addEventListener('fetch', event => {
 
             caches.open(CACHE_NAME)
               .then(cache => {
-                cache.put(event.request, responseToCache);
+                // Ne pas mettre en cache les requêtes avec des paramètres query
+                if (!event.request.url.includes('?')) {
+                  cache.put(event.request, responseToCache);
+                }
               });
 
             return response;
           }
-        );
-      })
-  );
-});
-
-// Nettoyer les anciens caches
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
+        ).catch(() => {
+          // En cas d'erreur réseau, essayer de servir la page d'accueil pour les requêtes de navigation
+          if (event.request.mode === 'navigate') {
+            return caches.match('/');
           }
-        })
-      );
-    })
+          return new Response('Hors ligne, contenu non disponible', {
+            status: 503,
+            statusText: 'Service indisponible'
+          });
+        });
+      })
   );
 });

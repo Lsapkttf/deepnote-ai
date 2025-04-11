@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import NoteCard from "@/components/NoteCard";
@@ -7,6 +8,8 @@ import AIChat from "@/components/AIChat";
 import SettingsDialog from "@/components/SettingsDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
+import InstallPWA from "@/components/InstallPWA";
+import MobileNav from "@/components/MobileNav";
 import { Note, NoteColor } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
 import { 
@@ -265,7 +268,17 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <AppBar />
+      {!isMobile && <AppBar />}
+      
+      {isMobile && (
+        <MobileNav 
+          onOpenSidebar={toggleSidebar}
+          onNewTextNote={handleNewTextNote}
+          onNewVoiceNote={handleNewVoiceNote}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearch}
+        />
+      )}
       
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -277,11 +290,11 @@ const Index = () => {
           selectedCategory={selectedCategory}
         />
         
-        <main className="flex-1 overflow-hidden md:ml-72">
+        <main className={`flex-1 overflow-hidden ${isMobile ? 'pt-16' : ''} md:ml-72`}>
           {view === "list" && (
             <div className="p-4 h-full flex flex-col overflow-hidden">
               <div className="md:hidden mb-4">
-                <SearchBar />
+                {!isMobile && <SearchBar />}
               </div>
               
               <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -292,80 +305,82 @@ const Index = () => {
                    "Archive"}
                 </h2>
                 
-                <div className="flex flex-wrap gap-2 sm:flex-nowrap">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9">
-                        <Filter className="h-4 w-4 mr-2" />
-                        Filtres
+                {!isMobile && (
+                  <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-9">
+                          <Filter className="h-4 w-4 mr-2" />
+                          Filtres
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem 
+                          className="cursor-pointer"
+                          onClick={() => setSelectedCategory("notes")}
+                        >
+                          Toutes les notes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="cursor-pointer"
+                          onClick={() => setSelectedCategory("recent")}
+                        >
+                          Notes récentes
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="cursor-pointer"
+                          onClick={() => setSelectedCategory("archive")}
+                        >
+                          Archive
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    
+                    <div className="flex border rounded-md overflow-hidden">
+                      <Button 
+                        variant={viewMode === "grid" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("grid")}
+                        className="rounded-none border-0"
+                      >
+                        <LayoutGrid className="h-4 w-4" />
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem 
-                        className="cursor-pointer"
-                        onClick={() => setSelectedCategory("notes")}
+                      <Button 
+                        variant={viewMode === "list" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("list")}
+                        className="rounded-none border-0"
                       >
-                        Toutes les notes
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="cursor-pointer"
-                        onClick={() => setSelectedCategory("recent")}
-                      >
-                        Notes récentes
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        className="cursor-pointer"
-                        onClick={() => setSelectedCategory("archive")}
-                      >
-                        Archive
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  
-                  <div className="flex border rounded-md overflow-hidden">
-                    <Button 
-                      variant={viewMode === "grid" ? "default" : "ghost"}
+                        <LayoutList className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <FuturisticButton 
+                      variant="outline" 
                       size="sm"
-                      onClick={() => setViewMode("grid")}
-                      className="rounded-none border-0"
+                      onClick={handleNewVoiceNote}
+                      className="h-9"
                     >
-                      <LayoutGrid className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant={viewMode === "list" ? "default" : "ghost"}
+                      <Mic className="h-4 w-4 mr-2" />
+                      Note vocale
+                    </FuturisticButton>
+                    
+                    <FuturisticButton 
                       size="sm"
-                      onClick={() => setViewMode("list")}
-                      className="rounded-none border-0"
+                      gradient
+                      glow
+                      onClick={handleNewTextNote}
+                      className="h-9"
                     >
-                      <LayoutList className="h-4 w-4" />
-                    </Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nouvelle note
+                    </FuturisticButton>
                   </div>
-                  
-                  <FuturisticButton 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleNewVoiceNote}
-                    className="h-9"
-                  >
-                    <Mic className="h-4 w-4 mr-2" />
-                    Note vocale
-                  </FuturisticButton>
-                  
-                  <FuturisticButton 
-                    size="sm"
-                    gradient
-                    glow
-                    onClick={handleNewTextNote}
-                    className="h-9"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nouvelle note
-                  </FuturisticButton>
-                </div>
+                )}
               </div>
               
-              <div className="flex-1 overflow-auto pb-4">
+              <div className="flex-1 overflow-auto pb-20 md:pb-4">
                 {isLoading ? (
                   <div className="h-full flex flex-col items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -380,7 +395,7 @@ const Index = () => {
                           ? "Aucune note archivée" 
                           : "Aucune note"}
                     </p>
-                    {(selectedCategory !== "archive" && !searchQuery) && (
+                    {!isMobile && (selectedCategory !== "archive" && !searchQuery) && (
                       <div className="flex space-x-4">
                         <FuturisticButton gradient glow onClick={handleNewTextNote}>
                           <Plus className="h-4 w-4 mr-2" />
@@ -452,6 +467,8 @@ const Index = () => {
         open={settingsDialogOpen}
         onOpenChange={setSettingsDialogOpen}
       />
+      
+      <InstallPWA />
     </div>
   );
 };
