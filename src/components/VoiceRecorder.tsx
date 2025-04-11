@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import FuturisticButton from "@/components/FuturisticButton";
-import { Mic, Square, Save, X, Waveform } from "lucide-react";
+import { Mic, Square, Save, X, Activity } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +23,6 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
   const analyserRef = useRef<AnalyserNode | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialiser l'API Web Speech
   useEffect(() => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       toast.error("La reconnaissance vocale n'est pas prise en charge par votre navigateur");
@@ -69,7 +67,6 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
       }
     };
     
-    // Nettoyer les ressources à la fermeture
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -83,7 +80,6 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
     };
   }, []);
 
-  // Gérer les niveaux audio pour l'animation de la forme d'onde
   const setupAudioAnalyser = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -101,10 +97,8 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
         if (analyserRef.current && isRecording) {
           analyserRef.current.getByteFrequencyData(dataArray);
           
-          // Calculer le niveau audio moyen
           const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length;
           
-          // Normaliser entre 0 et 100 pour l'utiliser comme pourcentage
           setAudioLevel(Math.min(100, average * 1.2));
         }
       };
@@ -122,7 +116,6 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
 
   const handleToggleRecording = async () => {
     if (isRecording) {
-      // Arrêter l'enregistrement
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
@@ -146,7 +139,6 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
         toast.success("Transcription terminée");
       }
     } else {
-      // Démarrer l'enregistrement
       setTranscription("");
       setRecordingDuration(0);
       
@@ -162,7 +154,6 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
           recognitionRef.current.start();
           setIsRecording(true);
           
-          // Démarrer le chronomètre
           const startTime = Date.now();
           const interval = setInterval(() => {
             const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
@@ -186,19 +177,16 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
     }
   };
 
-  // Formater le temps d'enregistrement
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Générer une visualisation dynamique pour la forme d'onde
   const generateWaveform = () => {
     return (
       <div className="flex items-center justify-center gap-1 h-10">
         {Array.from({ length: 12 }).map((_, index) => {
-          // Créer une variation dynamique basée sur audioLevel et index
           const height = isRecording 
             ? Math.max(4, Math.min(30, audioLevel / 3 * Math.sin((index + 1) * (Date.now() % 1000) / 1000)))
             : 4;
