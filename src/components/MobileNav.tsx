@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Plus, Search, Menu, X } from "lucide-react";
+import { Mic, Plus, Search, Menu, X, Settings } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import FuturisticButton from "@/components/FuturisticButton";
@@ -26,7 +26,7 @@ const MobileNav = ({
   return (
     <>
       {showSearch ? (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b flex items-center h-16 px-4 animate-fade-in">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b flex items-center h-16 px-4 animate-fade-in">
           <div className="relative w-full flex items-center">
             <Button 
               variant="ghost" 
@@ -50,7 +50,7 @@ const MobileNav = ({
           </div>
         </div>
       ) : (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b flex items-center justify-between h-16 px-4">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
@@ -73,6 +73,13 @@ const MobileNav = ({
               <Search className="h-5 w-5" />
             </Button>
             <ThemeToggle />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9" 
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       )}

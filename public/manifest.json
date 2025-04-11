@@ -1,13 +1,12 @@
 
 {
-  "name": "DeepNote",
-  "short_name": "DeepNote",
-  "description": "Application de prise de notes vocales et textuelles avec IA",
+  "name": "NotesVocales",
+  "short_name": "Notes",
+  "description": "Application de notes avec transcription vocale",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1b26",
-  "theme_color": "#3a86ff",
-  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#f4b400",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -18,7 +17,34 @@
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouvelle note",
+      "url": "/?action=new",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Note vocale",
+      "url": "/?action=voice",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "lang": "fr-FR",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false
 }
