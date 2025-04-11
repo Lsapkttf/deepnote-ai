@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 
-// Vérifier si l'application peut être installée
+// Check if the application can be installed
 export const checkIfPWAInstallable = (): boolean => {
   return !!(
     window.matchMedia('(display-mode: browser)').matches && 
@@ -9,7 +9,7 @@ export const checkIfPWAInstallable = (): boolean => {
   );
 };
 
-// Sauvegarder l'état de l'application avant la fermeture
+// Save application state before closing
 export const saveAppState = (state: any): void => {
   try {
     localStorage.setItem('app_state', JSON.stringify(state));
@@ -18,7 +18,7 @@ export const saveAppState = (state: any): void => {
   }
 };
 
-// Récupérer l'état de l'application au démarrage
+// Load application state on startup
 export const loadAppState = (): any => {
   try {
     const state = localStorage.getItem('app_state');
@@ -29,11 +29,11 @@ export const loadAppState = (): any => {
   }
 };
 
-// Gérer les ressources en ligne/hors ligne
+// Handle online/offline resources
 export const handleOfflineMode = () => {
   window.addEventListener('online', () => {
     toast.success("Connexion rétablie");
-    // Synchroniser les données
+    // Synchronize data
   });
 
   window.addEventListener('offline', () => {
@@ -43,14 +43,14 @@ export const handleOfflineMode = () => {
   });
 };
 
-// Fonction pour vérifier si la PWA est installée
+// Function to check if PWA is installed
 export const isPWAInstalled = (): boolean => {
   return window.matchMedia('(display-mode: standalone)').matches || 
-         // La propriété standalone n'existe que sur Safari iOS
+         // The standalone property only exists on Safari iOS
          (window.navigator as any).standalone === true;
 };
 
-// Vérifier les mises à jour de l'application
+// Check for application updates
 export const checkForUpdates = () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready.then(registration => {
@@ -59,7 +59,7 @@ export const checkForUpdates = () => {
   }
 };
 
-// Préparer l'appli pour l'installation PWA
+// Prepare app for PWA installation
 export const preparePWAInstallation = () => {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

@@ -11,7 +11,7 @@ interface AudioWaveformProps {
 const AudioWaveform = ({ 
   audioLevel, 
   isRecording, 
-  color = '#f4b400', 
+  color = '#6d28d9', 
   barCount = 24 
 }: AudioWaveformProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,7 +23,7 @@ const AudioWaveform = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Ajuster la taille du canvas
+    // Adjust canvas size
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     
@@ -34,7 +34,7 @@ const AudioWaveform = ({
     ctx.clearRect(0, 0, rect.width, rect.height);
     
     if (!isRecording) {
-      // Dessiner une ligne ondulée au repos
+      // Draw a wavy line when at rest
       ctx.beginPath();
       const centerY = rect.height / 2;
       const amplitude = rect.height / 12;
@@ -52,14 +52,14 @@ const AudioWaveform = ({
       return;
     }
     
-    // Dessiner la forme d'onde
+    // Draw waveform
     const barWidth = Math.max(2, rect.width / barCount - 2);
     const barSpacing = (rect.width - (barWidth * barCount)) / (barCount - 1);
     const maxBarHeight = rect.height * 0.9;
     const centerY = rect.height / 2;
     
     for (let i = 0; i < barCount; i++) {
-      // Créer un effet plus dynamique basé sur un sin
+      // Create a more dynamic effect based on sin
       const now = Date.now() / 200;
       const normalizedPosition = i / barCount;
       const offset = normalizedPosition * Math.PI;
@@ -70,7 +70,7 @@ const AudioWaveform = ({
         ? normalizedPosition * 2 
         : (1 - normalizedPosition) * 2));
       
-      // Hauteur de barre calculée
+      // Calculate bar height
       const barHeight = Math.max(
         4,
         maxBarHeight * levelFactor * dynamicFactor * sizeFactor
@@ -79,7 +79,12 @@ const AudioWaveform = ({
       const x = i * (barWidth + barSpacing);
       const y = centerY - barHeight / 2;
       
-      ctx.fillStyle = color;
+      // Use a gradient for more visual appeal
+      const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, color + '80'); // Semi-transparent color at bottom
+      
+      ctx.fillStyle = gradient;
       ctx.fillRect(x, y, barWidth, barHeight);
     }
   }, [audioLevel, isRecording, color, barCount]);

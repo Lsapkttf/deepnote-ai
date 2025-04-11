@@ -18,8 +18,8 @@ const Logo = ({ size = "md", withText = true, variant = "default" }: LogoProps) 
   return (
     <div className={`flex items-center gap-2 ${variant === "sidebar" ? "justify-center" : ""}`}>
       <div className="relative flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-500 blur-sm opacity-70 rounded-full" />
-        <div className="relative flex items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-orange-500 p-1.5 shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-600 blur-sm opacity-70 rounded-full" />
+        <div className="relative flex items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 p-1.5 shadow-lg">
           <Mic
             className="text-white"
             size={sizes[size].icon}
@@ -28,8 +28,8 @@ const Logo = ({ size = "md", withText = true, variant = "default" }: LogoProps) 
         </div>
       </div>
       {withText && (
-        <span className={`font-bold ${sizes[size].text} bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300`}>
-          NotesVocales
+        <span className={`font-bold ${sizes[size].text} bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400`}>
+          DeepNote
         </span>
       )}
     </div>

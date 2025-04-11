@@ -1,7 +1,7 @@
 
 {
-  "name": "NotesVocales",
-  "short_name": "Notes",
+  "name": "DeepNote",
+  "short_name": "DeepNote",
   "description": "Application de notes avec transcription vocale",
   "start_url": "/",
   "display": "standalone",
