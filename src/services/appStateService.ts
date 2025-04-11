@@ -46,7 +46,8 @@ export const handleOfflineMode = () => {
 // Fonction pour vérifier si la PWA est installée
 export const isPWAInstalled = (): boolean => {
   return window.matchMedia('(display-mode: standalone)').matches || 
-         window.navigator.standalone === true;
+         // La propriété standalone n'existe que sur Safari iOS
+         (window.navigator as any).standalone === true;
 };
 
 // Vérifier les mises à jour de l'application
