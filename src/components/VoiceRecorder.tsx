@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import FuturisticButton from "@/components/FuturisticButton";
 import { Mic, Square, Play, Pause, Save, X } from "lucide-react";
-import { RecordingState } from "@/services/audioService";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
