@@ -11,8 +11,8 @@ interface AudioWaveformProps {
 const AudioWaveform = ({ 
   audioLevel, 
   isRecording, 
-  color = 'hsl(var(--primary))', 
-  barCount = 12 
+  color = '#f4b400', 
+  barCount = 24 
 }: AudioWaveformProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -34,12 +34,20 @@ const AudioWaveform = ({
     ctx.clearRect(0, 0, rect.width, rect.height);
     
     if (!isRecording) {
-      // Dessiner une ligne plate lorsque l'enregistrement est arrêté
+      // Dessiner une ligne ondulée au repos
       ctx.beginPath();
-      ctx.moveTo(0, rect.height / 2);
-      ctx.lineTo(rect.width, rect.height / 2);
+      const centerY = rect.height / 2;
+      const amplitude = rect.height / 12;
+      const frequency = 8;
+      
+      ctx.moveTo(0, centerY);
+      for (let x = 0; x < rect.width; x++) {
+        const y = centerY + Math.sin(x / frequency) * amplitude;
+        ctx.lineTo(x, y);
+      }
+      
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 2;
       ctx.stroke();
       return;
     }
@@ -47,17 +55,29 @@ const AudioWaveform = ({
     // Dessiner la forme d'onde
     const barWidth = Math.max(2, rect.width / barCount - 2);
     const barSpacing = (rect.width - (barWidth * barCount)) / (barCount - 1);
+    const maxBarHeight = rect.height * 0.9;
+    const centerY = rect.height / 2;
     
     for (let i = 0; i < barCount; i++) {
-      // Calculer la hauteur en fonction du niveau audio et d'une petite randomisation
-      const randomFactor = Math.sin((Date.now() / 200) + i * 0.5) * 0.2 + 0.8;
+      // Créer un effet plus dynamique basé sur un sin
+      const now = Date.now() / 200;
+      const normalizedPosition = i / barCount;
+      const offset = normalizedPosition * Math.PI;
+      
+      const dynamicFactor = 0.6 + (Math.sin(now + offset * 4) * 0.4);
+      const levelFactor = audioLevel / 100;
+      const sizeFactor = Math.min(1, 0.2 + (normalizedPosition < 0.5 
+        ? normalizedPosition * 2 
+        : (1 - normalizedPosition) * 2));
+      
+      // Hauteur de barre calculée
       const barHeight = Math.max(
-        2,
-        Math.min(rect.height * 0.8, (audioLevel / 100) * rect.height * randomFactor)
+        4,
+        maxBarHeight * levelFactor * dynamicFactor * sizeFactor
       );
       
       const x = i * (barWidth + barSpacing);
-      const y = (rect.height - barHeight) / 2;
+      const y = centerY - barHeight / 2;
       
       ctx.fillStyle = color;
       ctx.fillRect(x, y, barWidth, barHeight);
@@ -67,9 +87,9 @@ const AudioWaveform = ({
   return (
     <canvas 
       ref={canvasRef} 
-      className="w-full h-12 transition-opacity duration-200" 
+      className="w-full h-16 transition-opacity duration-200" 
       style={{ 
-        opacity: isRecording ? 1 : 0.5 
+        opacity: isRecording ? 1 : 0.6 
       }}
     />
   );

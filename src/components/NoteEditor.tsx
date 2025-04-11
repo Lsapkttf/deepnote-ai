@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Note, NoteColor, AIAnalysis } from "@/types/note";
 import { Button } from "@/components/ui/button";
@@ -31,6 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
 import AIChat from "./AIChat";
 
 interface NoteEditorProps {
@@ -61,6 +61,7 @@ const NoteEditor = ({
   const [modifyPrompt, setModifyPrompt] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (note) {
@@ -70,7 +71,6 @@ const NoteEditor = ({
         : note.content);
       setColor(note.color);
     } else {
-      // Réinitialiser les champs si aucune note n'est sélectionnée
       setTitle("");
       setContent("");
       setColor("yellow");
@@ -153,23 +153,23 @@ Je voudrais que tu ${modifyPrompt}. Renvoie uniquement le contenu modifié, sans
   ];
 
   return (
-    <div className={`h-full flex flex-col bg-note-${color}/20`}>
-      <div className="p-4 pb-0 mb-2 flex items-center justify-between">
+    <div className={`h-full flex flex-col bg-note-${color}/20 ${isMobile ? 'pb-14' : ''}`}>
+      <div className="p-4 pb-0 mb-2 flex items-center justify-between overflow-x-auto">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour
         </Button>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
           <Button
             variant="outline"
             size="sm"
-            className="flex items-center"
+            className="flex items-center whitespace-nowrap"
             onClick={handleAnalyze}
             disabled={isAnalyzing}
           >
             <BrainCircuit className="h-4 w-4 mr-2" />
-            {isAnalyzing ? "Analyse en cours..." : "Analyser avec IA"}
+            {isAnalyzing ? "Analyse..." : "Analyser"}
           </Button>
 
           <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
@@ -177,11 +177,11 @@ Je voudrais que tu ${modifyPrompt}. Renvoie uniquement le contenu modifié, sans
               <Button
                 variant="outline"
                 size="sm"
-                className="flex items-center"
+                className="flex items-center whitespace-nowrap"
                 disabled={isModifying || !content.trim()}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                {isModifying ? "Modification..." : "Modifier avec IA"}
+                {isModifying ? "..." : "Modifier"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">
@@ -238,7 +238,7 @@ Je voudrais que tu ${modifyPrompt}. Renvoie uniquement le contenu modifié, sans
           <Button
             variant="outline"
             size="sm"
-            className="flex items-center"
+            className="flex items-center whitespace-nowrap"
             onClick={onStartChat}
           >
             <MessageCircle className="h-4 w-4 mr-2" />

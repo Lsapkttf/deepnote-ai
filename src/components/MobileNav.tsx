@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Mic, Plus, Search, Menu, X, Settings } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
-import FuturisticButton from "@/components/FuturisticButton";
 
 interface MobileNavProps {
   onOpenSidebar: () => void;
@@ -84,26 +83,25 @@ const MobileNav = ({
         </div>
       )}
       
-      {/* Boutons d'action rapide (FAB) */}
-      <div className="fixed right-5 bottom-6 z-40 flex flex-col-reverse gap-3">
-        <FuturisticButton
+      {/* Ajout d'une barre d'action fixe en bas de l'écran */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t flex items-center justify-around h-14 px-4">
+        <Button 
+          variant="ghost" 
           onClick={onNewTextNote}
-          size="lg"
-          gradient
-          glow
-          className="h-14 w-14 rounded-full shadow-lg p-0"
+          className="flex flex-col items-center justify-center h-12 w-16"
         >
-          <Plus className="h-6 w-6" />
-        </FuturisticButton>
+          <Plus className="h-5 w-5 mb-1" />
+          <span className="text-xs">Note</span>
+        </Button>
         
-        <FuturisticButton
+        <Button 
+          variant="ghost" 
           onClick={onNewVoiceNote}
-          size="lg"
-          variant="outline"
-          className="h-14 w-14 rounded-full shadow-lg bg-background/80 backdrop-blur-sm p-0"
+          className="flex flex-col items-center justify-center h-12 w-16"
         >
-          <Mic className="h-6 w-6" />
-        </FuturisticButton>
+          <Mic className="h-5 w-5 mb-1" />
+          <span className="text-xs">Vocal</span>
+        </Button>
       </div>
     </>
   );
