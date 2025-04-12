@@ -77,11 +77,12 @@ export const startRecording = async (
       
       // Mettre à jour l'état
       setRecordingState({
-        ...state,
         isRecording: false,
         audioURL,
         audioChunks,
-        duration: Math.floor((Date.now() - startTime) / 1000)
+        mediaRecorder: null,
+        duration: Math.floor((Date.now() - startTime) / 1000),
+        audioLevel: 0
       });
       
       // Arrêter les flux audio
@@ -138,10 +139,15 @@ export const startRecording = async (
           onAudioLevel(normalizedLevel);
         }
         
-        setRecordingState(prev => ({
-          ...prev,
-          audioLevel: normalizedLevel
-        }));
+        // FIX: Modifier pour utiliser un objet d'état complet au lieu d'une fonction de mise à jour
+        setRecordingState({
+          ...state,
+          audioLevel: normalizedLevel,
+          isRecording: true,
+          mediaRecorder,
+          audioChunks,
+          audioURL: null
+        });
       }
     };
     
@@ -150,10 +156,16 @@ export const startRecording = async (
     // Suivi du temps d'enregistrement
     const durationInterval = setInterval(() => {
       const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-      setRecordingState(prev => ({
-        ...prev,
-        duration: elapsedTime
-      }));
+      
+      // FIX: Modifier pour utiliser un objet d'état complet au lieu d'une fonction de mise à jour
+      setRecordingState({
+        ...state,
+        duration: elapsedTime,
+        isRecording: true,
+        mediaRecorder,
+        audioChunks,
+        audioURL: null
+      });
     }, 1000);
 
     // Démarrer l'enregistrement avec chunks réguliers
