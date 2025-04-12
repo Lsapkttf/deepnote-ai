@@ -96,19 +96,19 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     
-    /* Dark mode note colors - Improved contrast */
-    --note-yellow: 45 70% 25%;
-    --note-yellow-text: 45 70% 90%;
-    --note-red: 0 70% 25%;
-    --note-red-text: 0 70% 90%;
-    --note-green: 142 46% 25%;
-    --note-green-text: 142 46% 90%;
-    --note-blue: 211 70% 25%;
-    --note-blue-text: 211 70% 90%;
-    --note-purple: 270 46% 25%;
-    --note-purple-text: 270 46% 90%;
-    --note-orange: 25 70% 25%;
-    --note-orange-text: 25 70% 90%;
+    /* Dark mode note colors - Amélioré pour plus de lisibilité */
+    --note-yellow: 45 70% 45%;
+    --note-yellow-text: 45 100% 95%;
+    --note-red: 0 70% 45%;
+    --note-red-text: 0 100% 95%;
+    --note-green: 142 46% 45%;
+    --note-green-text: 142 100% 95%;
+    --note-blue: 211 70% 45%;
+    --note-blue-text: 211 100% 95%;
+    --note-purple: 270 46% 45%;
+    --note-purple-text: 270 100% 95%;
+    --note-orange: 25 70% 45%;
+    --note-orange-text: 25 100% 95%;
   }
 }
 

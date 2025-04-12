@@ -16,6 +16,13 @@ const AudioWaveform = ({
 }: AudioWaveformProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
+  // Fonction utilitaire pour vérifier si une couleur est valide
+  const isValidColor = (color: string): boolean => {
+    const s = new Option().style;
+    s.color = color;
+    return s.color !== '';
+  };
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -33,6 +40,9 @@ const AudioWaveform = ({
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
     
+    // Garantir que la couleur est valide
+    const safeColor = isValidColor(color) ? color : '#6d28d9';
+    
     if (!isRecording) {
       // Dessiner une ligne ondulée au repos
       ctx.beginPath();
@@ -48,9 +58,9 @@ const AudioWaveform = ({
       
       // Créer un dégradé
       const gradient = ctx.createLinearGradient(0, 0, rect.width, 0);
-      gradient.addColorStop(0, color + '90');
-      gradient.addColorStop(0.5, color);
-      gradient.addColorStop(1, color + '90');
+      gradient.addColorStop(0, safeColor + '90');
+      gradient.addColorStop(0.5, safeColor);
+      gradient.addColorStop(1, safeColor + '90');
       
       ctx.strokeStyle = gradient;
       ctx.lineWidth = 2;
@@ -64,24 +74,19 @@ const AudioWaveform = ({
     const maxBarHeight = rect.height * 0.8;
     const centerY = rect.height / 2;
     
-    // Garantir que la couleur est valide en utilisant un fallback sécurisé
-    let safeColor = color;
-    try {
-      // Test si la couleur est valide
-      const testDiv = document.createElement('div');
-      testDiv.style.color = color;
-      if (!testDiv.style.color) {
-        safeColor = '#6d28d9'; // Couleur par défaut si invalide
-      }
-    } catch (e) {
-      safeColor = '#6d28d9'; // Fallback en cas d'erreur
-    }
-    
     // Créer un dégradé vertical avec une couleur sécurisée
     const gradient = ctx.createLinearGradient(0, 0, 0, rect.height);
-    gradient.addColorStop(0, safeColor + '99');
-    gradient.addColorStop(0.5, safeColor);
-    gradient.addColorStop(1, safeColor + '99');
+    
+    // Utiliser rgba pour les dégradés au lieu d'ajouter des caractères à la chaîne
+    try {
+      gradient.addColorStop(0, safeColor);
+      gradient.addColorStop(0.5, safeColor);
+      gradient.addColorStop(1, safeColor);
+    } catch (e) {
+      // Fallback en cas d'erreur avec le dégradé
+      console.error("Erreur de dégradé:", e);
+      ctx.fillStyle = '#6d28d9';
+    }
     
     // Animer selon le temps
     const now = Date.now() / 150;

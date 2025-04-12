@@ -51,8 +51,11 @@ export const startRecording = async (
       }
     }
     
-    // Créer le MediaRecorder
-    const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    // Créer le MediaRecorder avec des options appropriées
+    const mediaRecorder = new MediaRecorder(stream, { 
+      mimeType: mimeType || undefined,
+      audioBitsPerSecond: 128000 
+    });
     
     const audioChunks: Blob[] = [];
     const startTime = Date.now();
@@ -83,10 +86,21 @@ export const startRecording = async (
       
       // Arrêter les flux audio
       stream.getTracks().forEach(track => track.stop());
-      audioContext.close().catch(err => console.error("Erreur lors de la fermeture du contexte audio:", err));
+      
+      try {
+        audioContext.close().catch(err => console.error("Erreur lors de la fermeture du contexte audio:", err));
+      } catch (err) {
+        console.error("Erreur lors de la fermeture du contexte audio:", err);
+      }
       
       // Libérer la mémoire
-      window.URL.revokeObjectURL(state.audioURL || "");
+      if (state.audioURL) {
+        try {
+          window.URL.revokeObjectURL(state.audioURL);
+        } catch (err) {
+          console.error("Erreur lors de la révocation de l'URL:", err);
+        }
+      }
       
       // Nettoyer les intervalles
       if ((mediaRecorder as any)._levelInterval) {
@@ -124,10 +138,10 @@ export const startRecording = async (
           onAudioLevel(normalizedLevel);
         }
         
-        setRecordingState({
-          ...state,
+        setRecordingState(prev => ({
+          ...prev,
           audioLevel: normalizedLevel
-        });
+        }));
       }
     };
     
@@ -136,16 +150,16 @@ export const startRecording = async (
     // Suivi du temps d'enregistrement
     const durationInterval = setInterval(() => {
       const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-      setRecordingState({
-        ...state,
+      setRecordingState(prev => ({
+        ...prev,
         duration: elapsedTime
-      });
+      }));
     }, 1000);
 
     // Démarrer l'enregistrement avec chunks réguliers
     mediaRecorder.start(1000);
     
-    // Mettre à jour l'état
+    // Mettre à jour l'état initial avec le MediaRecorder actif
     setRecordingState({
       isRecording: true,
       audioURL: null,

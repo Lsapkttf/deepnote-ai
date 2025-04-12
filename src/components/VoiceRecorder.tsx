@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Mic, Square, Loader2, Play, X, Save, VolumeX } from "lucide-react";
+import { Mic, Square, Loader2, Play, X, Save } from "lucide-react";
 import { startRecording, stopRecording, RecordingState } from "@/services/audioService";
 import { transcribeWithWhisper } from "@/services/whisperService";
 import AudioWaveform from "@/components/AudioWaveform";
 import FuturisticButton from "@/components/FuturisticButton";
+import { toast } from "sonner";
 
 interface VoiceRecorderProps {
   onTranscriptionComplete: (transcription: string) => void;
@@ -26,6 +28,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
   const [transcription, setTranscription] = useState("");
   const [timeElapsed, setTimeElapsed] = useState(0);
   
+  // Nettoyage à la fermeture du composant
   useEffect(() => {
     return () => {
       if (recordingState.isRecording) {
@@ -38,6 +41,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
     };
   }, []);
 
+  // Gérer le timer
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
@@ -54,28 +58,47 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
     };
   }, [recordingState.isRecording]);
 
-  const handleStartRecording = async () => {
+  const handleStartRecording = useCallback(async () => {
     try {
+      console.log("Démarrage de l'enregistrement");
+      toast.info("Démarrage de l'enregistrement...");
+      
       await startRecording(
         recordingState, 
-        setRecordingState,
-        (level) => setRecordingState(prev => ({ ...prev, audioLevel: level }))
+        (newState) => {
+          console.log("Mise à jour de l'état d'enregistrement:", newState.isRecording);
+          setRecordingState(newState);
+        },
+        (level) => {
+          setRecordingState(prev => ({ ...prev, audioLevel: level }));
+        }
       );
     } catch (error) {
       console.error("Erreur lors du démarrage de l'enregistrement:", error);
+      toast.error("Impossible de démarrer l'enregistrement");
     }
-  };
+  }, [recordingState]);
 
-  const handleStopRecording = async () => {
+  const handleStopRecording = useCallback(async () => {
     try {
-      stopRecording(recordingState, setRecordingState);
+      console.log("Arrêt de l'enregistrement");
+      toast.info("Arrêt de l'enregistrement...");
+      
+      stopRecording(recordingState, (newState) => {
+        console.log("Enregistrement arrêté, nouvel état:", newState);
+        setRecordingState(newState);
+      });
     } catch (error) {
       console.error("Erreur lors de l'arrêt de l'enregistrement:", error);
+      toast.error("Erreur lors de l'arrêt de l'enregistrement");
     }
-  };
+  }, [recordingState]);
 
   const handleTranscribeAudio = async () => {
-    if (!recordingState.audioChunks.length) return;
+    if (!recordingState.audioChunks.length) {
+      toast.error("Aucun enregistrement à transcrire");
+      return;
+    }
     
     setIsProcessing(true);
     
@@ -84,11 +107,14 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
         type: recordingState.mediaRecorder?.mimeType || 'audio/webm' 
       });
       
+      console.log("Transcription de l'audio, taille du blob:", audioBlob.size);
       const result = await transcribeWithWhisper(audioBlob);
+      console.log("Transcription terminée:", result);
       
       setTranscription(result);
     } catch (error) {
       console.error("Erreur lors de la transcription:", error);
+      toast.error("Erreur lors de la transcription audio");
     } finally {
       setIsProcessing(false);
     }
