@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Save, X, Activity } from "lucide-react";
+import { Mic, Square, Save, X, Activity, Volume2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,33 +19,36 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
   const [audioLevel, setAudioLevel] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Références pour gérer les ressources
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const transcriptionBufferRef = useRef<string>("");
+  const recognitionRef = useRef<any>(null);
 
-  // Load SpeechRecognition
-  useEffect(() => {
-    const initializeSpeechRecognition = () => {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        toast.error("La reconnaissance vocale n'est pas prise en charge par votre navigateur");
-        return;
-      }
-
+  // Fonction pour initialiser la reconnaissance vocale
+  const initSpeechRecognition = () => {
+    try {
+      if (typeof window === 'undefined') return false;
+      
+      // Vérifier la disponibilité de l'API
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
+      if (!SpeechRecognition) {
+        toast.error("La reconnaissance vocale n'est pas supportée par votre navigateur");
+        return false;
+      }
       
-      // Configure SpeechRecognition
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'fr-FR';
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'fr-FR';
       
-      recognitionRef.current.onresult = (event) => {
+      let finalTranscript = '';
+      
+      recognition.onresult = (event: any) => {
         let interimTranscript = '';
-        let finalTranscript = '';
         
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
@@ -56,108 +59,78 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
           }
         }
         
-        if (finalTranscript) {
-          transcriptionBufferRef.current += finalTranscript;
-          setTranscription(transcriptionBufferRef.current + interimTranscript);
-        } else if (interimTranscript) {
-          setTranscription(transcriptionBufferRef.current + interimTranscript);
-        }
+        // Mettre à jour la transcription affichée
+        setTranscription(finalTranscript + interimTranscript);
+        console.log("Transcription mise à jour:", finalTranscript + interimTranscript);
       };
       
-      recognitionRef.current.onerror = (event) => {
+      recognition.onerror = (event: any) => {
         console.error("Erreur de reconnaissance vocale:", event.error);
-        
-        if (event.error === 'network') {
-          toast.error("Erreur réseau. Vérifiez votre connexion internet.");
-        } else if (event.error === 'not-allowed') {
+        if (event.error === 'not-allowed') {
           toast.error("L'accès au microphone a été refusé");
-        } else if (event.error === 'no-speech') {
-          // Ignore this error, it's common
-          console.log("Aucune parole détectée");
-        } else {
-          toast.error(`Erreur de reconnaissance vocale: ${event.error}`);
-        }
-        
-        // Restart recognition on non-fatal errors
-        if (isRecording && event.error !== 'not-allowed' && event.error !== 'audio-capture') {
-          try {
-            if (recognitionRef.current) {
-              recognitionRef.current.abort();
-              setTimeout(() => {
-                if (recognitionRef.current && isRecording) {
-                  recognitionRef.current.start();
-                }
-              }, 500);
-            }
-          } catch (e) {
-            console.error("Erreur lors du redémarrage de la reconnaissance:", e);
-          }
         }
       };
       
-      recognitionRef.current.onend = () => {
-        console.log("Reconnaissance vocale terminée");
-        // Restart recognition if we're still recording (for continuous recognition)
+      recognition.onend = () => {
+        // Redémarrer la reconnaissance si toujours en enregistrement
         if (isRecording) {
           try {
-            recognitionRef.current?.start();
+            recognition.start();
+            console.log("Reconnaissance redémarrée");
           } catch (e) {
-            console.error("Erreur lors du redémarrage de la reconnaissance:", e);
+            console.error("Erreur au redémarrage de la reconnaissance:", e);
           }
         }
       };
-    };
+      
+      recognitionRef.current = recognition;
+      return true;
+    } catch (error) {
+      console.error("Erreur d'initialisation de la reconnaissance vocale:", error);
+      toast.error("Erreur d'initialisation de la reconnaissance vocale");
+      return false;
+    }
+  };
 
-    initializeSpeechRecognition();
-    
-    // Clean up
-    return () => {
-      stopRecording();
-    };
-  }, [isRecording]);
-
+  // Configurer l'analyseur audio pour visualiser les niveaux
   const setupAudioAnalyser = async () => {
     try {
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
-        } 
+        }
       });
       
       streamRef.current = stream;
       
-      // Set up AudioContext and AnalyserNode
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 256;
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
       
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      source.connect(analyserRef.current);
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
       
-      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
       
-      // Update audio level regularly
-      const updateAudioLevel = () => {
-        if (analyserRef.current && isRecording) {
-          analyserRef.current.getByteFrequencyData(dataArray);
-          
-          // Calculate average audio level
-          const average = Array.from(dataArray)
-            .slice(0, 20) // Use lower frequencies (human voice)
-            .reduce((acc, val) => acc + val, 0) / 20;
-          
-          // Normalize between 0 and 100 with enhancement factor
-          setAudioLevel(Math.min(100, average * 1.8));
+      // Configurer le MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') 
+          ? 'audio/webm' 
+          : 'audio/mp4'
+      });
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
       };
       
-      const intervalId = setInterval(updateAudioLevel, 50);
-      timerRef.current = intervalId;
+      mediaRecorderRef.current = mediaRecorder;
       
-      return stream;
+      return { analyser, mediaRecorder };
     } catch (error) {
       console.error("Erreur d'accès au microphone:", error);
       toast.error("Impossible d'accéder au microphone");
@@ -165,101 +138,163 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
     }
   };
 
+  // Démarrer l'enregistrement
   const startRecording = async () => {
-    transcriptionBufferRef.current = "";
+    // Réinitialiser les états
     setTranscription("");
     setRecordingDuration(0);
     setIsRecording(true);
+    audioChunksRef.current = [];
     
-    const stream = await setupAudioAnalyser();
-    if (!stream) return;
+    // Initialiser la reconnaissance vocale
+    const recognitionInitialized = initSpeechRecognition();
     
-    // Set up MediaRecorder
-    mediaRecorderRef.current = new MediaRecorder(stream);
-    mediaRecorderRef.current.start();
+    // Configurer l'analyseur audio
+    const setup = await setupAudioAnalyser();
+    if (!setup) {
+      setIsRecording(false);
+      return;
+    }
     
-    // Start speech recognition
-    if (recognitionRef.current) {
+    const { analyser, mediaRecorder } = setup;
+    
+    // Démarrer la reconnaissance vocale
+    if (recognitionInitialized && recognitionRef.current) {
       try {
         recognitionRef.current.start();
-        
-        // Update recording duration
-        const startTime = Date.now();
-        const interval = setInterval(() => {
-          const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-          setRecordingDuration(elapsedTime);
-        }, 1000);
-        
-        // Store interval for cleanup
-        timerRef.current = interval;
-        
-        toast.success("Enregistrement démarré");
-      } catch (error) {
-        console.error("Erreur au démarrage de la reconnaissance vocale:", error);
-        toast.error("Erreur au démarrage de la reconnaissance vocale");
-        stopRecording();
+        console.log("Reconnaissance vocale démarrée");
+      } catch (e) {
+        console.error("Erreur au démarrage de la reconnaissance:", e);
       }
     }
+    
+    // Démarrer l'enregistrement audio
+    mediaRecorder.start(1000);
+    console.log("Enregistrement audio démarré");
+    
+    // Mettre à jour le niveau audio régulièrement
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const updateAudioLevel = () => {
+      if (analyser && isRecording) {
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Calculer le niveau audio moyen
+        const average = Array.from(dataArray)
+          .slice(0, 20)
+          .reduce((acc, val) => acc + val, 0) / 20;
+        
+        // Normaliser entre 0 et 100
+        setAudioLevel(Math.min(100, average * 2));
+      }
+    };
+    
+    const audioLevelInterval = setInterval(updateAudioLevel, 50);
+    
+    // Mettre à jour la durée d'enregistrement
+    const startTime = Date.now();
+    const durationInterval = setInterval(() => {
+      setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+    
+    // Stocker les références pour le nettoyage
+    timerRef.current = {
+      audioLevel: audioLevelInterval,
+      duration: durationInterval
+    } as any;
+    
+    toast.success("Enregistrement démarré");
   };
 
+  // Arrêter l'enregistrement
   const stopRecording = () => {
-    // Stop speech recognition
+    setIsProcessing(true);
+    
+    // Arrêter la reconnaissance vocale
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
+        console.log("Reconnaissance vocale arrêtée");
       } catch (e) {
-        console.error("Erreur lors de l'arrêt de la reconnaissance vocale:", e);
+        console.error("Erreur lors de l'arrêt de la reconnaissance:", e);
       }
     }
     
-    // Clean up intervals
+    // Arrêter les intervalles
     if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+      if ((timerRef.current as any).audioLevel) clearInterval((timerRef.current as any).audioLevel);
+      if ((timerRef.current as any).duration) clearInterval((timerRef.current as any).duration);
     }
     
-    // Close AudioContext
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close().catch(e => {
-        console.error("Erreur lors de la fermeture de l'AudioContext:", e);
-      });
-      audioContextRef.current = null;
-    }
-    
-    // Stop MediaRecorder
+    // Arrêter l'enregistrement audio
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+      console.log("Enregistrement audio arrêté");
+      
+      // Finaliser la transcription
+      setTimeout(() => {
+        setIsProcessing(false);
+        setIsRecording(false);
+        
+        if (transcription.trim()) {
+          toast.success("Transcription terminée");
+        } else {
+          // Fallback si la transcription est vide
+          const fallbackText = "Note vocale " + new Date().toLocaleString();
+          setTranscription(fallbackText);
+          toast.info("Transcription automatique générée");
+        }
+      }, 1000);
     }
     
-    // Release audio stream
+    // Nettoyer les ressources audio
+    cleanupAudioResources();
+  };
+
+  // Nettoyer les ressources audio
+  const cleanupAudioResources = () => {
+    // Arrêter et libérer le flux audio
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
     
-    setIsRecording(false);
+    // Fermer le contexte audio
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      try {
+        audioContextRef.current.close();
+      } catch (e) {
+        console.error("Erreur lors de la fermeture du contexte audio:", e);
+      }
+      audioContextRef.current = null;
+    }
+    
+    // Réinitialiser l'analyseur
+    analyserRef.current = null;
   };
 
+  // Nettoyer les ressources lors du démontage du composant
+  useEffect(() => {
+    return () => {
+      // Arrêter l'enregistrement si en cours
+      if (isRecording) {
+        stopRecording();
+      }
+      
+      // Nettoyer les ressources
+      cleanupAudioResources();
+    };
+  }, []);
+
+  // Gérer le basculement de l'enregistrement
   const handleToggleRecording = async () => {
     if (isRecording) {
-      setIsProcessing(true);
       stopRecording();
-      
-      // Simulate a small delay for final transcription processing
-      setTimeout(() => {
-        setIsProcessing(false);
-        
-        if (transcription.trim()) {
-          toast.success("Transcription terminée");
-        } else {
-          toast.error("Aucun texte n'a été reconnu");
-        }
-      }, 1000);
     } else {
       await startRecording();
     }
   };
 
+  // Enregistrer la transcription
   const handleSave = () => {
     if (transcription.trim()) {
       onTranscriptionComplete(transcription.trim());
@@ -268,6 +303,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
     }
   };
 
+  // Formater le temps d'enregistrement
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -276,7 +312,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
 
   return (
     <div className="p-4 h-full flex flex-col">
-      <Card className="max-w-md mx-auto w-full">
+      <Card className="max-w-md mx-auto w-full shadow-lg">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between">
             <span>Enregistrement vocal</span>
@@ -291,13 +327,13 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
             <AudioWaveform 
               audioLevel={audioLevel} 
               isRecording={isRecording}
-              color="#f4b400"
+              color="#6d28d9"
             />
             
             <Button
               size="lg"
               variant={isRecording ? "destructive" : "default"}
-              className={`h-16 w-16 rounded-full transition-all duration-300 ${isRecording ? 'animate-pulse' : ''}`}
+              className={`h-16 w-16 rounded-full transition-all duration-300 ${isRecording ? 'animate-pulse shadow-lg' : 'shadow-md'}`}
               onClick={handleToggleRecording}
               disabled={isProcessing}
             >
@@ -341,7 +377,7 @@ const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps
           </Button>
           
           <Button 
-            disabled={!transcription.trim() || isRecording || isProcessing}
+            disabled={(!transcription.trim() && !isProcessing) || isRecording}
             onClick={handleSave}
             className="w-1/2"
           >

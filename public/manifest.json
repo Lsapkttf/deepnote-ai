@@ -1,12 +1,14 @@
 
 {
-  "name": "DeepNote",
+  "name": "DeepNote - Notes & Transcription",
   "short_name": "DeepNote",
-  "description": "Application de notes avec transcription vocale",
+  "description": "Application de prise de notes et de transcription vocale",
+  "id": "/",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#f4b400",
+  "theme_color": "#6d28d9",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -44,7 +46,22 @@
     }
   ],
   "lang": "fr-FR",
-  "orientation": "portrait-primary",
   "categories": ["productivity", "utilities"],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "/screenshots/screen1.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshots/screen2.png",
+      "sizes": "1280x720",
+      "type": "image/png" 
+    }
+  ],
+  "related_applications": [],
+  "capture_links": "existing_client_event",
+  "scope": "/",
+  "dir": "ltr"
 }

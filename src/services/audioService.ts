@@ -17,6 +17,12 @@ export const startRecording = async (
   onAudioLevel?: (level: number) => void
 ): Promise<void> => {
   try {
+    // Vérifier si l'API est disponible
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error("Votre navigateur ne supporte pas l'enregistrement audio");
+      return;
+    }
+    
     // Demander les permissions et obtenir le flux audio
     const stream = await navigator.mediaDevices.getUserMedia({ 
       audio: {
@@ -26,6 +32,7 @@ export const startRecording = async (
       } 
     });
     
+    // Créer le contexte audio et l'analyseur
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
@@ -35,28 +42,37 @@ export const startRecording = async (
     
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     
-    // Créer le MediaRecorder avec des options de qualité améliorée
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: MediaRecorder.isTypeSupported('audio/webm') 
-        ? 'audio/webm' 
-        : 'audio/mp4'
-    });
+    // Vérifier les formats supportés
+    let mimeType = 'audio/webm';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'audio/mp4';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = '';
+      }
+    }
+    
+    // Créer le MediaRecorder
+    const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     
     const audioChunks: Blob[] = [];
     const startTime = Date.now();
 
-    // Événement pour capturer les morceaux audio
+    // Gestion des chunks audio
     mediaRecorder.addEventListener("dataavailable", (event) => {
-      audioChunks.push(event.data);
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
     });
 
-    // Événement à la fin de l'enregistrement
+    // Gestion de la fin d'enregistrement
     mediaRecorder.addEventListener("stop", () => {
+      // Combiner les chunks en un blob
       const audioBlob = new Blob(audioChunks, { 
-        type: mediaRecorder.mimeType 
+        type: mediaRecorder.mimeType || 'audio/webm' 
       });
       const audioURL = URL.createObjectURL(audioBlob);
       
+      // Mettre à jour l'état
       setRecordingState({
         ...state,
         isRecording: false,
@@ -65,12 +81,30 @@ export const startRecording = async (
         duration: Math.floor((Date.now() - startTime) / 1000)
       });
       
-      // Arrêter tous les flux audio
+      // Arrêter les flux audio
       stream.getTracks().forEach(track => track.stop());
-      audioContext.close();
+      audioContext.close().catch(err => console.error("Erreur lors de la fermeture du contexte audio:", err));
       
       // Libérer la mémoire
       window.URL.revokeObjectURL(state.audioURL || "");
+      
+      // Nettoyer les intervalles
+      if ((mediaRecorder as any)._levelInterval) {
+        clearInterval((mediaRecorder as any)._levelInterval);
+      }
+      
+      if ((mediaRecorder as any)._durationInterval) {
+        clearInterval((mediaRecorder as any)._durationInterval);
+      }
+      
+      toast.success("Enregistrement terminé");
+    });
+
+    // Gestion des erreurs
+    mediaRecorder.addEventListener("error", (event) => {
+      console.error("Erreur MediaRecorder:", event);
+      toast.error("Erreur lors de l'enregistrement");
+      stopRecording(state, setRecordingState);
     });
 
     // Mettre en place la mise à jour du niveau audio
@@ -78,11 +112,13 @@ export const startRecording = async (
       if (analyser && state.isRecording) {
         analyser.getByteFrequencyData(dataArray);
         
-        // Calculer le niveau audio moyen
-        const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length;
+        // Utiliser les basses fréquences pour la voix humaine
+        const average = Array.from(dataArray)
+          .slice(0, 20)
+          .reduce((acc, val) => acc + val, 0) / 20;
         
-        // Normaliser entre 0 et 100
-        const normalizedLevel = Math.min(100, average * 1.5);
+        // Normaliser entre 0 et 100 avec facteur d'amplification
+        const normalizedLevel = Math.min(100, average * 2);
         
         if (onAudioLevel) {
           onAudioLevel(normalizedLevel);
@@ -95,7 +131,7 @@ export const startRecording = async (
       }
     };
     
-    const levelInterval = setInterval(updateAudioLevel, 100);
+    const levelInterval = setInterval(updateAudioLevel, 50);
     
     // Suivi du temps d'enregistrement
     const durationInterval = setInterval(() => {
@@ -106,9 +142,10 @@ export const startRecording = async (
       });
     }, 1000);
 
-    // Démarrer l'enregistrement
-    mediaRecorder.start();
+    // Démarrer l'enregistrement avec chunks réguliers
+    mediaRecorder.start(1000);
     
+    // Mettre à jour l'état
     setRecordingState({
       isRecording: true,
       audioURL: null,
@@ -125,7 +162,14 @@ export const startRecording = async (
     toast.success("Enregistrement démarré");
   } catch (error) {
     console.error("Erreur lors de l'enregistrement:", error);
-    toast.error("Impossible d'accéder au microphone");
+    
+    if ((error as any).name === 'NotAllowedError') {
+      toast.error("L'accès au microphone a été refusé");
+    } else if ((error as any).name === 'NotFoundError') {
+      toast.error("Aucun microphone détecté");
+    } else {
+      toast.error("Impossible d'accéder au microphone");
+    }
   }
 };
 
@@ -134,7 +178,9 @@ export const stopRecording = (
   state: RecordingState,
   setRecordingState: (state: RecordingState) => void
 ): void => {
-  if (state.mediaRecorder && state.isRecording) {
+  if (!state.mediaRecorder || !state.isRecording) return;
+  
+  try {
     // Nettoyer les intervalles
     if ((state.mediaRecorder as any)._levelInterval) {
       clearInterval((state.mediaRecorder as any)._levelInterval);
@@ -144,19 +190,29 @@ export const stopRecording = (
       clearInterval((state.mediaRecorder as any)._durationInterval);
     }
     
-    state.mediaRecorder.stop();
+    // Arrêter l'enregistrement s'il est en cours
+    if (state.mediaRecorder.state !== 'inactive') {
+      state.mediaRecorder.stop();
+    }
     
     // Arrêter tous les flux audio
     if (state.mediaRecorder.stream) {
       state.mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
     
+    // Mettre à jour l'état
     setRecordingState({
       ...state,
       isRecording: false
     });
+  } catch (error) {
+    console.error("Erreur lors de l'arrêt de l'enregistrement:", error);
     
-    toast.success("Enregistrement terminé");
+    // Forcer la mise à jour de l'état en cas d'erreur
+    setRecordingState({
+      ...state,
+      isRecording: false
+    });
   }
 };
 
@@ -165,17 +221,27 @@ export const getAudioBlob = (state: RecordingState): Blob | null => {
   if (state.audioChunks.length === 0) return null;
   
   return new Blob(state.audioChunks, { 
-    type: 'audio/wav'
+    type: state.mediaRecorder?.mimeType || 'audio/webm'
   });
 };
 
 // Nettoyer les ressources d'enregistrement
 export const cleanupRecording = (state: RecordingState): void => {
+  // Libérer les URL
   if (state.audioURL) {
-    window.URL.revokeObjectURL(state.audioURL);
+    try {
+      window.URL.revokeObjectURL(state.audioURL);
+    } catch (e) {
+      console.error("Erreur lors de la libération de l'URL:", e);
+    }
   }
   
+  // Arrêter les flux
   if (state.mediaRecorder && state.mediaRecorder.stream) {
-    state.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    try {
+      state.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    } catch (e) {
+      console.error("Erreur lors de l'arrêt des flux:", e);
+    }
   }
 };

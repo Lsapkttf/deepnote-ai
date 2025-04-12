@@ -1,9 +1,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Plus, Search, Menu, X, Settings } from "lucide-react";
+import { Mic, Plus, Search, Menu, X, Settings, Home, Archive, History } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { Input } from "@/components/ui/input";
 
 interface MobileNavProps {
   onOpenSidebar: () => void;
@@ -11,6 +12,7 @@ interface MobileNavProps {
   onNewVoiceNote: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onOpenSettings?: () => void;
 }
 
 const MobileNav = ({ 
@@ -18,7 +20,8 @@ const MobileNav = ({
   onNewTextNote, 
   onNewVoiceNote,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onOpenSettings
 }: MobileNavProps) => {
   const [showSearch, setShowSearch] = useState(false);
   
@@ -76,6 +79,7 @@ const MobileNav = ({
               variant="ghost" 
               size="icon" 
               className="h-9 w-9" 
+              onClick={onOpenSettings}
             >
               <Settings className="h-5 w-5" />
             </Button>
@@ -83,25 +87,27 @@ const MobileNav = ({
         </div>
       )}
       
-      {/* Ajout d'une barre d'action fixe en bas de l'écran */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t flex items-center justify-around h-14 px-4">
-        <Button 
-          variant="ghost" 
-          onClick={onNewTextNote}
-          className="flex flex-col items-center justify-center h-12 w-16"
-        >
-          <Plus className="h-5 w-5 mb-1" />
-          <span className="text-xs">Note</span>
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          onClick={onNewVoiceNote}
-          className="flex flex-col items-center justify-center h-12 w-16"
-        >
-          <Mic className="h-5 w-5 mb-1" />
-          <span className="text-xs">Vocal</span>
-        </Button>
+      {/* Barre d'actions flottante en bas de l'écran */}
+      <div className="fixed bottom-6 left-0 right-0 z-40 flex justify-center">
+        <div className="flex items-center bg-background/95 backdrop-blur-md shadow-xl border rounded-full px-2 py-1">
+          <Button 
+            variant="ghost" 
+            onClick={onNewVoiceNote}
+            className="flex items-center justify-center h-12 w-12 rounded-full"
+          >
+            <Mic className="h-5 w-5" />
+          </Button>
+          
+          <div className="mx-1 h-10 w-px bg-border"></div>
+          
+          <Button 
+            variant="default"
+            onClick={onNewTextNote}
+            className="flex items-center justify-center h-12 w-12 rounded-full bg-primary hover:bg-primary/90"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </div>
       </div>
     </>
   );

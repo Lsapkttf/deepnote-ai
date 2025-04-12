@@ -4,11 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/types/note";
-import { Send, ArrowLeft, RefreshCw, User, Bot, Loader2 } from "lucide-react";
+import { Send, ArrowLeft, RefreshCw, User, Bot, Loader2, Sparkles } from "lucide-react";
 import { chatWithAI, getChatHistory } from "@/services/aiService";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 interface AIChatProps {
   messages: ChatMessage[];
@@ -39,10 +38,76 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
         });
       }
     }
-  }, [messages, noteId]);
+  }, [messages, noteId, onSendMessage]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  
+  // Fonction pour insérer des emojis dans la réponse
+  const enhanceResponseWithEmojis = (response: string): string => {
+    if (!response) return response;
+    
+    // Liste d'emojis associés à des mots-clés
+    const emojiMappings = [
+      { keywords: ['résumé', 'synthèse', 'récapitulatif'], emoji: '📝' },
+      { keywords: ['important', 'crucial', 'essentiel', 'vital'], emoji: '⚠️' },
+      { keywords: ['remarque', 'note', 'attention'], emoji: '📌' },
+      { keywords: ['exemple', 'illustration'], emoji: '💡' },
+      { keywords: ['conseil', 'astuce', 'recommandation'], emoji: '✨' },
+      { keywords: ['étape', 'phase', 'procédure'], emoji: '🔄' },
+      { keywords: ['succès', 'réussite', 'accomplissement'], emoji: '🎯' },
+      { keywords: ['point', 'élément'], emoji: '•' },
+      { keywords: ['avantage', 'bénéfice', 'plus'], emoji: '✅' },
+      { keywords: ['inconvénient', 'désavantage', 'moins'], emoji: '❌' },
+      { keywords: ['information', 'info', 'donnée'], emoji: 'ℹ️' },
+      { keywords: ['question', 'interrogation'], emoji: '❓' },
+      { keywords: ['temps', 'durée', 'période'], emoji: '⏱️' },
+      { keywords: ['argent', 'budget', 'coût', 'prix'], emoji: '💰' },
+      { keywords: ['idée', 'concept'], emoji: '💭' },
+      { keywords: ['problème', 'difficulté', 'obstacle'], emoji: '🚧' },
+      { keywords: ['solution', 'résolution'], emoji: '🔑' }
+    ];
+    
+    // Fonction pour ajouter des emojis aux titres
+    const enhanceTitles = (text: string): string => {
+      return text.replace(/^(#+)\s+(.+)$/gm, (match, hashes, title) => {
+        // Trouver un emoji approprié
+        let emoji = '✨'; // Emoji par défaut
+        
+        for (const mapping of emojiMappings) {
+          if (mapping.keywords.some(keyword => title.toLowerCase().includes(keyword))) {
+            emoji = mapping.emoji;
+            break;
+          }
+        }
+        
+        return `${hashes} ${emoji} ${title}`;
+      });
+    };
+    
+    // Fonction pour améliorer les listes
+    const enhanceLists = (text: string): string => {
+      return text.replace(/^([*-])\s+(.+)$/gm, (match, bullet, item) => {
+        // Trouver un emoji approprié
+        let emoji = '•'; // Emoji par défaut
+        
+        for (const mapping of emojiMappings) {
+          if (mapping.keywords.some(keyword => item.toLowerCase().includes(keyword))) {
+            emoji = mapping.emoji;
+            break;
+          }
+        }
+        
+        return `${bullet} ${emoji} ${item}`;
+      });
+    };
+    
+    // Appliquer les améliorations
+    let enhancedResponse = enhanceTitles(response);
+    enhancedResponse = enhanceLists(enhancedResponse);
+    
+    return enhancedResponse;
   };
 
   const handleSendMessage = async (messageToSend = input.trim(), retry = false) => {
@@ -63,7 +128,9 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
       console.log("Réponse reçue:", response);
       
       if (response) {
-        onSendMessage(response, 'assistant');
+        // Améliorer la réponse avec des emojis
+        const enhancedResponse = enhanceResponseWithEmojis(response);
+        onSendMessage(enhancedResponse, 'assistant');
       } else {
         throw new Error("Réponse vide");
       }
@@ -116,23 +183,26 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
           {messages.length === 0 ? (
             <Card className="border-dashed bg-muted/40">
               <CardHeader className="pb-3">
-                <CardTitle className="text-center text-lg">Posez des questions sur votre note</CardTitle>
+                <CardTitle className="text-center text-lg flex items-center justify-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Posez des questions sur votre note
+                </CardTitle>
               </CardHeader>
               <CardContent className="text-center text-muted-foreground">
                 <p className="mb-3">L'IA se basera sur le contenu de votre note pour répondre à vos questions.</p>
                 <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto mt-4">
                   {[
-                    "Fais un résumé de cette note",
-                    "Quelles sont les étapes mentionnées ?",
-                    "Quels sont les points importants ?",
-                    "Qu'est-ce que cette note essaie de me dire ?"
+                    "✨ Fais un résumé de cette note",
+                    "📋 Quelles sont les étapes mentionnées ?",
+                    "🔍 Quels sont les points importants ?",
+                    "💡 Donne des idées complémentaires"
                   ].map((suggestion, i) => (
                     <Button 
                       key={i} 
                       variant="outline" 
                       size="sm" 
                       className="text-xs"
-                      onClick={() => handleSendMessage(suggestion)}
+                      onClick={() => handleSendMessage(suggestion.substring(3))}
                     >
                       {suggestion}
                     </Button>
