@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -44,13 +43,19 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     
-    /* Note colors */
+    /* Note colors - Light mode */
     --note-yellow: 45 100% 96%;
+    --note-yellow-text: 45 100% 15%;
     --note-red: 0 100% 95%;
+    --note-red-text: 0 100% 15%; 
     --note-green: 142 76% 95%;
+    --note-green-text: 142 76% 15%;
     --note-blue: 211 100% 95%;
+    --note-blue-text: 211 100% 15%;
     --note-purple: 270 76% 95%;
+    --note-purple-text: 270 76% 15%;
     --note-orange: 25 100% 95%;
+    --note-orange-text: 25 100% 15%;
   }
 
   .dark {
@@ -91,13 +96,19 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     
-    /* Dark mode note colors */
-    --note-yellow: 45 70% 15%;
-    --note-red: 0 70% 15%;
-    --note-green: 142 46% 15%;
-    --note-blue: 211 70% 15%;
-    --note-purple: 270 46% 15%;
-    --note-orange: 25 70% 15%;
+    /* Dark mode note colors - Improved contrast */
+    --note-yellow: 45 70% 25%;
+    --note-yellow-text: 45 70% 90%;
+    --note-red: 0 70% 25%;
+    --note-red-text: 0 70% 90%;
+    --note-green: 142 46% 25%;
+    --note-green-text: 142 46% 90%;
+    --note-blue: 211 70% 25%;
+    --note-blue-text: 211 70% 90%;
+    --note-purple: 270 46% 25%;
+    --note-purple-text: 270 46% 90%;
+    --note-orange: 25 70% 25%;
+    --note-orange-text: 25 70% 90%;
   }
 }
 
@@ -124,26 +135,32 @@
 
 .note-card-yellow {
   @apply bg-note-yellow dark:bg-note-yellow;
+  color: hsl(var(--note-yellow-text));
 }
 
 .note-card-red {
   @apply bg-note-red dark:bg-note-red;
+  color: hsl(var(--note-red-text));
 }
 
 .note-card-green {
   @apply bg-note-green dark:bg-note-green;
+  color: hsl(var(--note-green-text));
 }
 
 .note-card-blue {
   @apply bg-note-blue dark:bg-note-blue;
+  color: hsl(var(--note-blue-text));
 }
 
 .note-card-purple {
   @apply bg-note-purple dark:bg-note-purple;
+  color: hsl(var(--note-purple-text));
 }
 
 .note-card-orange {
   @apply bg-note-orange dark:bg-note-orange;
+  color: hsl(var(--note-orange-text));
 }
 
 /* Animations */

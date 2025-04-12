@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Download, X, Share2, Plus, ArrowUp } from "lucide-react";
+import { Download, X, Share2, Plus, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { checkIfPWAInstallable, isPWAInstalled } from "@/services/appStateService";
 
@@ -22,7 +22,7 @@ const InstallPWA = () => {
     
     // Gestionnaire pour l'événement beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log("Événement beforeinstallprompt intercepté");
+      console.log("Événement beforeinstallprompt intercepté", e);
       
       // Empêcher Chrome de montrer automatiquement le prompt d'installation
       e.preventDefault();
@@ -76,7 +76,7 @@ const InstallPWA = () => {
         const { outcome } = await deferredPrompt.userChoice;
         
         if (outcome === 'accepted') {
-          toast.success("DeepNote a été installé avec succès!");
+          toast.success("🎉 DeepNote a été installée avec succès!");
         } else {
           toast.info("Installation annulée");
         }
@@ -86,14 +86,14 @@ const InstallPWA = () => {
         setShowInstallPrompt(false);
       } catch (error) {
         console.error("Erreur lors de l'installation:", error);
-        toast.error("Erreur lors de l'installation");
+        toast.error("⚠️ Erreur lors de l'installation");
       }
     }
     // Pour Safari iOS (qui n'a pas d'API d'installation)
     else if (isIOSDevice) {
-      toast.info("Pour installer DeepNote sur iOS:", { 
-        duration: 10000,
-        description: "Appuyez sur l'icône Partager, puis sur 'Ajouter à l'écran d'accueil'"
+      toast.info("📱 Pour installer DeepNote sur iOS:", { 
+        duration: 15000,
+        description: "1️⃣ Appuyez sur l'icône Partager \n2️⃣ Faites défiler jusqu'à 'Sur l'écran d'accueil' \n3️⃣ Appuyez sur 'Ajouter'"
       });
     }
   };
@@ -112,7 +112,7 @@ const InstallPWA = () => {
     <div className="fixed bottom-5 left-0 right-0 z-50 mx-auto max-w-md p-4 bg-card shadow-xl border rounded-lg animate-fade-in">
       <div className="flex items-start">
         <div className="flex-1">
-          <h3 className="font-semibold">Installer DeepNote</h3>
+          <h3 className="font-semibold">📲 Installer DeepNote</h3>
           <p className="text-sm text-muted-foreground mt-1">
             {isIOSDevice 
               ? "Installez l'application pour un accès rapide et hors ligne"
@@ -144,7 +144,7 @@ const InstallPWA = () => {
             className="flex items-center" 
             onClick={handleInstallClick}
           >
-            <Download className="mr-2 h-4 w-4" />
+            <ArrowDown className="mr-2 h-4 w-4" />
             Installer l'application
           </Button>
         )}

@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'deepnote-v1';
+const CACHE_NAME = 'deepnote-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -57,7 +57,7 @@ self.addEventListener('activate', (event) => {
 // Stratégie de cache: Network First, falling back to cache
 self.addEventListener('fetch', (event) => {
   // Ne pas intercepter les requêtes vers des API
-  if (event.request.url.includes('/api/')) {
+  if (event.request.url.includes('/api/') || event.request.url.includes('hf.space')) {
     return;
   }
   
@@ -91,7 +91,8 @@ self.addEventListener('fetch', (event) => {
             }
             
             // Si la ressource n'est pas dans le cache et que c'est une page HTML
-            if (event.request.headers.get('accept').includes('text/html')) {
+            if (event.request.headers.get('accept') && 
+                event.request.headers.get('accept').includes('text/html')) {
               return caches.match('/');
             }
             
@@ -103,7 +104,7 @@ self.addEventListener('fetch', (event) => {
 
 // Gestion des messages
 self.addEventListener('message', (event) => {
-  if (event.data.action === 'skipWaiting') {
+  if (event.data && event.data.action === 'skipWaiting') {
     self.skipWaiting();
   }
 });

@@ -1,391 +1,257 @@
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Save, X, Activity, Volume2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import AudioWaveform from "./AudioWaveform";
+import { Card } from "@/components/ui/card";
+import { Mic, Square, Loader2, Play, X, Save, VolumeX } from "lucide-react";
+import { startRecording, stopRecording, RecordingState } from "@/services/audioService";
+import { transcribeWithWhisper } from "@/services/whisperService";
+import AudioWaveform from "@/components/AudioWaveform";
+import FuturisticButton from "@/components/FuturisticButton";
 
 interface VoiceRecorderProps {
   onTranscriptionComplete: (transcription: string) => void;
   onCancel: () => void;
 }
 
-const VoiceRecorder = ({ onTranscriptionComplete, onCancel }: VoiceRecorderProps) => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [transcription, setTranscription] = useState("");
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
+const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, onCancel }) => {
+  const [recordingState, setRecordingState] = useState<RecordingState>({
+    isRecording: false,
+    audioURL: null,
+    mediaRecorder: null,
+    audioChunks: [],
+    duration: 0,
+    audioLevel: 0
+  });
   
-  // Références pour gérer les ressources
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [transcription, setTranscription] = useState("");
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [audioLevels, setAudioLevels] = useState<number[]>([]);
 
-  // Fonction pour initialiser la reconnaissance vocale
-  const initSpeechRecognition = () => {
-    try {
-      if (typeof window === 'undefined') return false;
-      
-      // Vérifier la disponibilité de l'API
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        toast.error("La reconnaissance vocale n'est pas supportée par votre navigateur");
-        return false;
-      }
-      
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'fr-FR';
-      
-      let finalTranscript = '';
-      
-      recognition.onresult = (event: any) => {
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-        
-        // Mettre à jour la transcription affichée
-        setTranscription(finalTranscript + interimTranscript);
-        console.log("Transcription mise à jour:", finalTranscript + interimTranscript);
-      };
-      
-      recognition.onerror = (event: any) => {
-        console.error("Erreur de reconnaissance vocale:", event.error);
-        if (event.error === 'not-allowed') {
-          toast.error("L'accès au microphone a été refusé");
-        }
-      };
-      
-      recognition.onend = () => {
-        // Redémarrer la reconnaissance si toujours en enregistrement
-        if (isRecording) {
-          try {
-            recognition.start();
-            console.log("Reconnaissance redémarrée");
-          } catch (e) {
-            console.error("Erreur au redémarrage de la reconnaissance:", e);
-          }
-        }
-      };
-      
-      recognitionRef.current = recognition;
-      return true;
-    } catch (error) {
-      console.error("Erreur d'initialisation de la reconnaissance vocale:", error);
-      toast.error("Erreur d'initialisation de la reconnaissance vocale");
-      return false;
-    }
-  };
-
-  // Configurer l'analyseur audio pour visualiser les niveaux
-  const setupAudioAnalyser = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-      
-      streamRef.current = stream;
-      
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      
-      const source = audioContext.createMediaStreamSource(stream);
-      source.connect(analyser);
-      
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
-      
-      // Configurer le MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') 
-          ? 'audio/webm' 
-          : 'audio/mp4'
-      });
-      
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-      
-      mediaRecorderRef.current = mediaRecorder;
-      
-      return { analyser, mediaRecorder };
-    } catch (error) {
-      console.error("Erreur d'accès au microphone:", error);
-      toast.error("Impossible d'accéder au microphone");
-      return null;
-    }
-  };
-
-  // Démarrer l'enregistrement
-  const startRecording = async () => {
-    // Réinitialiser les états
-    setTranscription("");
-    setRecordingDuration(0);
-    setIsRecording(true);
-    audioChunksRef.current = [];
-    
-    // Initialiser la reconnaissance vocale
-    const recognitionInitialized = initSpeechRecognition();
-    
-    // Configurer l'analyseur audio
-    const setup = await setupAudioAnalyser();
-    if (!setup) {
-      setIsRecording(false);
-      return;
-    }
-    
-    const { analyser, mediaRecorder } = setup;
-    
-    // Démarrer la reconnaissance vocale
-    if (recognitionInitialized && recognitionRef.current) {
-      try {
-        recognitionRef.current.start();
-        console.log("Reconnaissance vocale démarrée");
-      } catch (e) {
-        console.error("Erreur au démarrage de la reconnaissance:", e);
-      }
-    }
-    
-    // Démarrer l'enregistrement audio
-    mediaRecorder.start(1000);
-    console.log("Enregistrement audio démarré");
-    
-    // Mettre à jour le niveau audio régulièrement
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    const updateAudioLevel = () => {
-      if (analyser && isRecording) {
-        analyser.getByteFrequencyData(dataArray);
-        
-        // Calculer le niveau audio moyen
-        const average = Array.from(dataArray)
-          .slice(0, 20)
-          .reduce((acc, val) => acc + val, 0) / 20;
-        
-        // Normaliser entre 0 et 100
-        setAudioLevel(Math.min(100, average * 2));
-      }
-    };
-    
-    const audioLevelInterval = setInterval(updateAudioLevel, 50);
-    
-    // Mettre à jour la durée d'enregistrement
-    const startTime = Date.now();
-    const durationInterval = setInterval(() => {
-      setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
-    
-    // Stocker les références pour le nettoyage
-    timerRef.current = {
-      audioLevel: audioLevelInterval,
-      duration: durationInterval
-    } as any;
-    
-    toast.success("Enregistrement démarré");
-  };
-
-  // Arrêter l'enregistrement
-  const stopRecording = () => {
-    setIsProcessing(true);
-    
-    // Arrêter la reconnaissance vocale
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-        console.log("Reconnaissance vocale arrêtée");
-      } catch (e) {
-        console.error("Erreur lors de l'arrêt de la reconnaissance:", e);
-      }
-    }
-    
-    // Arrêter les intervalles
-    if (timerRef.current) {
-      if ((timerRef.current as any).audioLevel) clearInterval((timerRef.current as any).audioLevel);
-      if ((timerRef.current as any).duration) clearInterval((timerRef.current as any).duration);
-    }
-    
-    // Arrêter l'enregistrement audio
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      console.log("Enregistrement audio arrêté");
-      
-      // Finaliser la transcription
-      setTimeout(() => {
-        setIsProcessing(false);
-        setIsRecording(false);
-        
-        if (transcription.trim()) {
-          toast.success("Transcription terminée");
-        } else {
-          // Fallback si la transcription est vide
-          const fallbackText = "Note vocale " + new Date().toLocaleString();
-          setTranscription(fallbackText);
-          toast.info("Transcription automatique générée");
-        }
-      }, 1000);
-    }
-    
-    // Nettoyer les ressources audio
-    cleanupAudioResources();
-  };
-
-  // Nettoyer les ressources audio
-  const cleanupAudioResources = () => {
-    // Arrêter et libérer le flux audio
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
-    // Fermer le contexte audio
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      try {
-        audioContextRef.current.close();
-      } catch (e) {
-        console.error("Erreur lors de la fermeture du contexte audio:", e);
-      }
-      audioContextRef.current = null;
-    }
-    
-    // Réinitialiser l'analyseur
-    analyserRef.current = null;
-  };
-
-  // Nettoyer les ressources lors du démontage du composant
+  // Nettoyage à la fermeture du composant
   useEffect(() => {
     return () => {
-      // Arrêter l'enregistrement si en cours
-      if (isRecording) {
-        stopRecording();
+      if (recordingState.isRecording) {
+        stopRecording(recordingState, setRecordingState);
       }
       
-      // Nettoyer les ressources
-      cleanupAudioResources();
+      if (recordingState.audioURL) {
+        URL.revokeObjectURL(recordingState.audioURL);
+      }
     };
   }, []);
 
-  // Gérer le basculement de l'enregistrement
-  const handleToggleRecording = async () => {
-    if (isRecording) {
-      stopRecording();
+  // Gérer les niveaux audio pour l'animation
+  useEffect(() => {
+    if (recordingState.isRecording) {
+      setAudioLevels(prevLevels => {
+        if (prevLevels.length > 50) {
+          return [...prevLevels.slice(-49), recordingState.audioLevel];
+        }
+        return [...prevLevels, recordingState.audioLevel];
+      });
+    }
+  }, [recordingState.audioLevel, recordingState.isRecording]);
+
+  // Gérer le timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (recordingState.isRecording) {
+      interval = setInterval(() => {
+        setTimeElapsed(prev => prev + 1);
+      }, 1000);
     } else {
-      await startRecording();
+      setTimeElapsed(0);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [recordingState.isRecording]);
+
+  const handleStartRecording = async () => {
+    try {
+      await startRecording(
+        recordingState, 
+        setRecordingState,
+        (level) => setRecordingState(prev => ({ ...prev, audioLevel: level }))
+      );
+    } catch (error) {
+      console.error("Erreur lors du démarrage de l'enregistrement:", error);
     }
   };
 
-  // Enregistrer la transcription
-  const handleSave = () => {
-    if (transcription.trim()) {
-      onTranscriptionComplete(transcription.trim());
-    } else {
-      toast.error("Aucun contenu à enregistrer");
+  const handleStopRecording = async () => {
+    try {
+      stopRecording(recordingState, setRecordingState);
+    } catch (error) {
+      console.error("Erreur lors de l'arrêt de l'enregistrement:", error);
     }
   };
 
-  // Formater le temps d'enregistrement
+  const handleTranscribeAudio = async () => {
+    if (!recordingState.audioChunks.length) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Créer un blob à partir des chunks audio
+      const audioBlob = new Blob(recordingState.audioChunks, { 
+        type: recordingState.mediaRecorder?.mimeType || 'audio/webm' 
+      });
+      
+      // Transcription avec Whisper via votre espace HF
+      const result = await transcribeWithWhisper(audioBlob);
+      
+      setTranscription(result);
+    } catch (error) {
+      console.error("Erreur lors de la transcription:", error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSaveTranscription = () => {
+    onTranscriptionComplete(transcription);
+  };
+
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div className="p-4 h-full flex flex-col">
-      <Card className="max-w-md mx-auto w-full shadow-lg">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center justify-between">
-            <span>Enregistrement vocal</span>
-            <span className="text-sm font-normal text-muted-foreground">
-              {formatTime(recordingDuration)}
-            </span>
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <div className="flex flex-col items-center justify-center gap-4 py-6">
-            <AudioWaveform 
-              audioLevel={audioLevel} 
-              isRecording={isRecording}
-              color="#6d28d9"
-            />
-            
-            <Button
-              size="lg"
-              variant={isRecording ? "destructive" : "default"}
-              className={`h-16 w-16 rounded-full transition-all duration-300 ${isRecording ? 'animate-pulse shadow-lg' : 'shadow-md'}`}
-              onClick={handleToggleRecording}
-              disabled={isProcessing}
-            >
-              {isRecording ? (
-                <Square className="h-6 w-6" />
-              ) : isProcessing ? (
-                <Activity className="h-6 w-6 animate-pulse" />
-              ) : (
-                <Mic className="h-6 w-6" />
-              )}
-            </Button>
-            
-            <div className="w-full mt-2">
-              {isRecording && (
-                <Progress value={audioLevel} className="h-2" />
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="px-6 py-4 border-b flex items-center justify-between">
+        <h2 className="text-xl font-bold">🎙️ Note vocale</h2>
+        <Button variant="ghost" size="icon" onClick={onCancel}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-6">
+        <Card className="p-6 mb-6 shadow-sm">
+          <div className="flex flex-col items-center justify-center">
+            <div className="relative mb-4">
+              <div 
+                className={`h-32 w-32 rounded-full flex items-center justify-center ${
+                  recordingState.isRecording 
+                    ? "bg-red-100 dark:bg-red-900 recording-pulse" 
+                    : "bg-muted"
+                }`}
+              >
+                {recordingState.isRecording ? (
+                  <Square 
+                    className="h-16 w-16 text-red-500" 
+                    onClick={handleStopRecording} 
+                  />
+                ) : (
+                  <Mic 
+                    className="h-16 w-16 text-muted-foreground" 
+                    onClick={handleStartRecording} 
+                  />
+                )}
+              </div>
+              {recordingState.isRecording && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                  {formatTime(timeElapsed)}
+                </div>
               )}
             </div>
-          </div>
-          
-          <div className={`rounded-lg border p-3 min-h-32 max-h-64 overflow-y-auto transition-all duration-200 ${transcription ? 'bg-card' : 'bg-muted/30'}`}>
-            {transcription ? (
-              <p className="whitespace-pre-wrap">{transcription}</p>
+            
+            {recordingState.isRecording ? (
+              <div className="w-full h-20 mt-4">
+                <AudioWaveform 
+                  audioLevels={audioLevels} 
+                  maxHeight={80} 
+                  barWidth={4} 
+                  barGap={2} 
+                  color="red" 
+                />
+              </div>
             ) : (
-              <p className="text-muted-foreground text-center italic">
-                {isRecording 
-                  ? "Parlez maintenant..." 
-                  : "Appuyez sur le microphone pour commencer l'enregistrement"}
-              </p>
+              <>
+                {recordingState.audioURL ? (
+                  <div className="mt-4 w-full">
+                    <audio 
+                      src={recordingState.audioURL} 
+                      controls 
+                      className="w-full" 
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground mt-6">
+                    <p>Appuyez sur le micro pour commencer l'enregistrement</p>
+                    <p className="text-sm mt-2">
+                      Parlez clairement et nous transcrirons votre message
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+            
+            {recordingState.audioURL && !transcription && !isProcessing && (
+              <FuturisticButton 
+                className="mt-6" 
+                onClick={handleTranscribeAudio}
+                disabled={isProcessing}
+                gradient
+                glow
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Transcrire l'audio
+              </FuturisticButton>
+            )}
+            
+            {isProcessing && (
+              <div className="flex flex-col items-center justify-center mt-6">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                <p className="text-muted-foreground">Transcription en cours...</p>
+              </div>
             )}
           </div>
-        </CardContent>
+        </Card>
         
-        <CardFooter className="flex justify-between gap-2 pt-2">
+        {transcription && (
+          <Card className="p-6 shadow-sm">
+            <h3 className="font-semibold mb-2">✨ Transcription</h3>
+            <div className="bg-muted p-4 rounded-md mb-4 max-h-64 overflow-y-auto">
+              <p className="whitespace-pre-wrap">{transcription}</p>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setTranscription("")}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Effacer
+              </Button>
+              <Button 
+                onClick={handleSaveTranscription}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Sauvegarder
+              </Button>
+            </div>
+          </Card>
+        )}
+      </div>
+      
+      {recordingState.isRecording && (
+        <div className="p-4 border-t flex justify-center">
           <Button 
-            variant="outline" 
-            onClick={onCancel}
-            className="w-1/2"
+            variant="destructive" 
+            size="lg"
+            onClick={handleStopRecording}
+            className="px-6"
           >
-            <X className="mr-2 h-4 w-4" />
-            Annuler
+            <Square className="h-4 w-4 mr-2" />
+            Arrêter l'enregistrement
           </Button>
-          
-          <Button 
-            disabled={(!transcription.trim() && !isProcessing) || isRecording}
-            onClick={handleSave}
-            className="w-1/2"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            Enregistrer
-          </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      )}
     </div>
   );
 };

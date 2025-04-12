@@ -6,8 +6,8 @@ export const checkIfPWAInstallable = (): boolean => {
   // Vérifier si nous sommes dans un navigateur et non déjà en mode standalone
   const isInBrowser = window.matchMedia('(display-mode: browser)').matches;
   
-  // Vérifier si l'API d'installation est disponible (Chrome, Edge, etc.)
-  const hasInstallPrompt = 'BeforeInstallPromptEvent' in window;
+  // Vérifier si l'API d'installation est disponible
+  const hasInstallPrompt = 'beforeinstallprompt' in window;
   
   // Vérifier si c'est Safari sur iOS (qui a sa propre méthode d'installation)
   const isSafariIOS = 
@@ -161,7 +161,11 @@ export const preparePWAInstallation = () => {
     (window as any).deferredPrompt = e;
     
     // Informer l'utilisateur que l'application peut être installée
-    console.log("L'application peut être installée");
+    console.log("L'application peut être installée", e);
+    toast.info("💡 DeepNote peut être installée sur votre appareil", {
+      description: "Pour une meilleure expérience, installez l'application",
+      duration: 8000
+    });
   });
   
   // Détecter quand l'application est installée
@@ -172,7 +176,7 @@ export const preparePWAInstallation = () => {
     // Enregistrer que l'application a été installée
     localStorage.setItem('pwa_installed', 'true');
     
-    toast.success("DeepNote a été installé avec succès!");
+    toast.success("🎉 DeepNote a été installée avec succès!");
     console.log("PWA installée avec succès");
   });
 };
