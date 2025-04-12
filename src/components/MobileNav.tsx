@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, Menu, X, Settings } from "lucide-react";
+import { Search, Menu, X, Settings, Plus } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -88,7 +88,15 @@ const MobileNav = ({
         )}
       </div>
       
-      {/* Barre d'actions flottante en bas supprimée comme demandé */}
+      {/* Floating action button for new notes */}
+      <Button 
+        variant="default" 
+        size="icon" 
+        className="fixed right-6 bottom-6 shadow-md h-14 w-14 rounded-full z-50"
+        onClick={onNewTextNote}
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
     </>
   );
 };

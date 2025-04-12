@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -284,3 +285,9 @@
 .keep-note:hover {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
+
+/* Ensure note text is black in dark mode */
+.dark .note-card * {
+  color: black;
+}
+
