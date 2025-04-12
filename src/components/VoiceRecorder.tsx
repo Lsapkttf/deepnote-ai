@@ -26,8 +26,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcription, setTranscription] = useState("");
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [audioLevels, setAudioLevels] = useState<number[]>([]);
-
+  
   // Nettoyage à la fermeture du composant
   useEffect(() => {
     return () => {
@@ -40,18 +39,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
       }
     };
   }, []);
-
-  // Gérer les niveaux audio pour l'animation
-  useEffect(() => {
-    if (recordingState.isRecording) {
-      setAudioLevels(prevLevels => {
-        if (prevLevels.length > 50) {
-          return [...prevLevels.slice(-49), recordingState.audioLevel];
-        }
-        return [...prevLevels, recordingState.audioLevel];
-      });
-    }
-  }, [recordingState.audioLevel, recordingState.isRecording]);
 
   // Gérer le timer
   useEffect(() => {
@@ -164,11 +151,10 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
             {recordingState.isRecording ? (
               <div className="w-full h-20 mt-4">
                 <AudioWaveform 
-                  audioLevels={audioLevels} 
-                  maxHeight={80} 
-                  barWidth={4} 
-                  barGap={2} 
-                  color="red" 
+                  audioLevel={recordingState.audioLevel}
+                  isRecording={recordingState.isRecording}
+                  color="red"
+                  barCount={32}
                 />
               </div>
             ) : (
