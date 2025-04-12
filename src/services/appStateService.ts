@@ -67,9 +67,14 @@ export const handleOfflineMode = () => {
       // Déclencher une synchronisation
       if ('serviceWorker' in navigator && 'SyncManager' in window) {
         navigator.serviceWorker.ready.then(registration => {
-          registration.sync.register('sync-notes').catch(err => {
-            console.error("Erreur lors de l'enregistrement de la synchronisation:", err);
-          });
+          // Vérifier si sync est disponible sur ce navigateur
+          if ('sync' in registration) {
+            (registration as any).sync.register('sync-notes').catch((err: Error) => {
+              console.error("Erreur lors de l'enregistrement de la synchronisation:", err);
+            });
+          } else {
+            console.log("L'API de synchronisation n'est pas disponible dans ce navigateur");
+          }
         });
       }
     } else {

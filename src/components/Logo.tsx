@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Mic, MusicNote } from "lucide-react";
+import { Mic } from "lucide-react";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
