@@ -64,11 +64,24 @@ const AudioWaveform = ({
     const maxBarHeight = rect.height * 0.8;
     const centerY = rect.height / 2;
     
-    // Créer un dégradé vertical
+    // Garantir que la couleur est valide en utilisant un fallback sécurisé
+    let safeColor = color;
+    try {
+      // Test si la couleur est valide
+      const testDiv = document.createElement('div');
+      testDiv.style.color = color;
+      if (!testDiv.style.color) {
+        safeColor = '#6d28d9'; // Couleur par défaut si invalide
+      }
+    } catch (e) {
+      safeColor = '#6d28d9'; // Fallback en cas d'erreur
+    }
+    
+    // Créer un dégradé vertical avec une couleur sécurisée
     const gradient = ctx.createLinearGradient(0, 0, 0, rect.height);
-    gradient.addColorStop(0, color + '99');
-    gradient.addColorStop(0.5, color);
-    gradient.addColorStop(1, color + '99');
+    gradient.addColorStop(0, safeColor + '99');
+    gradient.addColorStop(0.5, safeColor);
+    gradient.addColorStop(1, safeColor + '99');
     
     // Animer selon le temps
     const now = Date.now() / 150;
@@ -105,7 +118,7 @@ const AudioWaveform = ({
       
       // Ajouter un effet de lueur si le niveau est élevé
       if (audioLevel > 60) {
-        ctx.shadowColor = color;
+        ctx.shadowColor = safeColor;
         ctx.shadowBlur = 5;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;

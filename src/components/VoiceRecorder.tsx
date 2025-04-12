@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,7 +26,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
   const [transcription, setTranscription] = useState("");
   const [timeElapsed, setTimeElapsed] = useState(0);
   
-  // Nettoyage à la fermeture du composant
   useEffect(() => {
     return () => {
       if (recordingState.isRecording) {
@@ -40,7 +38,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
     };
   }, []);
 
-  // Gérer le timer
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
@@ -83,12 +80,10 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
     setIsProcessing(true);
     
     try {
-      // Créer un blob à partir des chunks audio
       const audioBlob = new Blob(recordingState.audioChunks, { 
         type: recordingState.mediaRecorder?.mimeType || 'audio/webm' 
       });
       
-      // Transcription avec Whisper via votre espace HF
       const result = await transcribeWithWhisper(audioBlob);
       
       setTranscription(result);
@@ -153,7 +148,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptionComplete, 
                 <AudioWaveform 
                   audioLevel={recordingState.audioLevel}
                   isRecording={recordingState.isRecording}
-                  color="red"
+                  color="#ef4444"
                   barCount={32}
                 />
               </div>
