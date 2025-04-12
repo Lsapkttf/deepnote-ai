@@ -277,6 +277,7 @@ const Index = () => {
           onNewVoiceNote={handleNewVoiceNote}
           searchQuery={searchQuery}
           onSearchChange={handleSearch}
+          onOpenSettings={() => setSettingsDialogOpen(true)}
         />
       )}
       
@@ -469,6 +470,18 @@ const Index = () => {
       />
       
       <InstallPWA />
+      
+      {/* Floating add button for mobile */}
+      {isMobile && view === "list" && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <Button 
+            className="h-14 w-14 rounded-full shadow-lg"
+            onClick={handleNewTextNote}
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

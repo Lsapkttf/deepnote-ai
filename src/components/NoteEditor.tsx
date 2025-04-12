@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Note, NoteColor, AIAnalysis } from "@/types/note";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { analyzeText, chatWithAI } from "@/services/aiService";
 import { toast } from "sonner";
 import { 
-  CirclePlus, 
   Save, 
   SquarePen, 
   MessageCircle, 
@@ -152,98 +152,135 @@ Je voudrais que tu ${modifyPrompt}. Renvoie uniquement le contenu modifié, sans
     "transformes en une liste à puces organisée"
   ];
 
+  const mobileHeaderStyles = isMobile 
+    ? "flex-wrap overflow-x-auto gap-1 pb-1 px-1 justify-start" 
+    : "overflow-x-auto pb-2";
+
   return (
     <div className={`h-full flex flex-col bg-note-${color}/20 ${isMobile ? 'pb-14' : ''}`}>
-      <div className="p-4 pb-0 mb-2 flex items-center justify-between overflow-x-auto">
+      <div className="p-2 pb-0 mb-2 flex items-center justify-between overflow-x-auto">
         <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-4 w-4 mr-1" />
           Retour
         </Button>
 
-        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center whitespace-nowrap"
-            onClick={handleAnalyze}
-            disabled={isAnalyzing}
-          >
-            <BrainCircuit className="h-4 w-4 mr-2" />
-            {isAnalyzing ? "Analyse..." : "Analyser"}
-          </Button>
-
-          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-            <PopoverTrigger asChild>
+        <div className={`flex items-center space-x-1 ${mobileHeaderStyles}`}>
+          {isMobile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center whitespace-nowrap"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleAnalyze} disabled={isAnalyzing}>
+                  <BrainCircuit className="h-4 w-4 mr-2" />
+                  {isAnalyzing ? "Analyse..." : "Analyser"}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setIsPopoverOpen(true)}
+                  disabled={isModifying || !content.trim()}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {isModifying ? "..." : "Modifier"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onStartChat}>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Chat IA
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
               <Button
                 variant="outline"
                 size="sm"
                 className="flex items-center whitespace-nowrap"
-                disabled={isModifying || !content.trim()}
+                onClick={handleAnalyze}
+                disabled={isAnalyzing}
               >
-                <Sparkles className="h-4 w-4 mr-2" />
-                {isModifying ? "..." : "Modifier"}
+                <BrainCircuit className="h-4 w-4 mr-2" />
+                {isAnalyzing ? "Analyse..." : "Analyser"}
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <h4 className="font-medium">Modifier cette note avec l'IA</h4>
-                <p className="text-sm text-muted-foreground">
-                  Dites à l'IA comment vous souhaitez modifier votre note.
-                </p>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="ex: résume ce texte en points clés"
-                    value={modifyPrompt}
-                    onChange={(e) => setModifyPrompt(e.target.value)}
-                  />
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {AIModificationSuggestions.map((suggestion, i) => (
-                      <button
-                        key={i}
-                        className="text-xs text-primary hover:underline"
-                        onClick={() => setModifyPrompt(suggestion)}
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setIsPopoverOpen(false)}
-                  >
-                    Annuler
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={handleModifyWithAI}
-                    disabled={!modifyPrompt.trim() || isModifying}
-                  >
-                    {isModifying ? (
-                      <>
-                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                        Modification...
-                      </>
-                    ) : (
-                      "Appliquer"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center whitespace-nowrap"
-            onClick={onStartChat}
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Chat IA
-          </Button>
+              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center whitespace-nowrap"
+                    disabled={isModifying || !content.trim()}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {isModifying ? "..." : "Modifier"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Modifier cette note avec l'IA</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Dites à l'IA comment vous souhaitez modifier votre note.
+                    </p>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="ex: résume ce texte en points clés"
+                        value={modifyPrompt}
+                        onChange={(e) => setModifyPrompt(e.target.value)}
+                      />
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {AIModificationSuggestions.map((suggestion, i) => (
+                          <button
+                            key={i}
+                            className="text-xs text-primary hover:underline"
+                            onClick={() => setModifyPrompt(suggestion)}
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsPopoverOpen(false)}
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={handleModifyWithAI}
+                        disabled={!modifyPrompt.trim() || isModifying}
+                      >
+                        {isModifying ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                            Modification...
+                          </>
+                        ) : (
+                          "Appliquer"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center whitespace-nowrap"
+                onClick={onStartChat}
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Chat IA
+              </Button>
+            </>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -267,7 +304,7 @@ Je voudrais que tu ${modifyPrompt}. Renvoie uniquement le contenu modifié, sans
           </DropdownMenu>
 
           <Button variant="default" size="sm" onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="h-4 w-4 mr-1" />
             Enregistrer
           </Button>
         </div>

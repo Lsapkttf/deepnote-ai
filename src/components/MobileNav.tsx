@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Plus, Search, Menu, X, Settings, Home } from "lucide-react";
+import { Search, Menu, X, Settings } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -88,30 +88,7 @@ const MobileNav = ({
         )}
       </div>
       
-      {/* Barre d'actions flottante en bas de l'écran - position fixed améliorée */}
-      <div className="fixed bottom-6 left-0 right-0 z-40 flex justify-center px-4">
-        <div className="flex items-center bg-background/95 backdrop-blur-md shadow-xl border rounded-full px-2 py-1 w-auto max-w-full">
-          <Button 
-            variant="ghost" 
-            onClick={onNewVoiceNote}
-            className="flex items-center justify-center h-12 w-12 rounded-full"
-            aria-label="Créer une note vocale"
-          >
-            <Mic className="h-5 w-5" />
-          </Button>
-          
-          <div className="mx-1 h-10 w-px bg-border"></div>
-          
-          <Button 
-            variant="default"
-            onClick={onNewTextNote}
-            className="flex items-center justify-center h-12 w-12 rounded-full bg-primary hover:bg-primary/90"
-            aria-label="Créer une nouvelle note"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </div>
-      </div>
+      {/* Barre d'actions flottante en bas supprimée comme demandé */}
     </>
   );
 };

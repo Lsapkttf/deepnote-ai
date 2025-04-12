@@ -1,8 +1,8 @@
 
 import { toast } from "sonner";
 
-// URL de l'espace Hugging Face
-const WHISPER_API_URL = 'https://lsapk-whisper-asr.hf.space/run/predict';
+// URL de l'espace Hugging Face - Mise à jour avec votre espace
+const WHISPER_API_URL = 'https://huggingface.co/spaces/Lsapk/whisper-asr/api/run/predict';
 
 // Interface pour la réponse de l'API
 interface WhisperResponse {
@@ -49,6 +49,7 @@ export const transcribeWithWhisper = async (audioBlob: Blob): Promise<string> =>
     });
     
     if (!response.ok) {
+      console.error(`Erreur HTTP: ${response.status}`, await response.text());
       throw new Error(`Erreur HTTP: ${response.status}`);
     }
     
@@ -102,7 +103,7 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 // Fonction pour vérifier si le service est disponible
 export const testWhisperConnection = async (): Promise<boolean> => {
   try {
-    const response = await fetch('https://lsapk-whisper-asr.hf.space/');
+    const response = await fetch('https://huggingface.co/spaces/Lsapk/whisper-asr');
     return response.ok;
   } catch (error) {
     console.error("Erreur de connexion à l'espace Whisper:", error);
