@@ -1,10 +1,9 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/types/note";
-import { Send, ArrowLeft, RefreshCw, User, Bot, Loader2, Sparkles } from "lucide-react";
+import { Send, ArrowLeft, RefreshCw, User, Bot, Loader2, Sparkles, FileEdit } from "lucide-react";
 import { chatWithAI, getChatHistory } from "@/services/aiService";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +14,10 @@ interface AIChatProps {
   noteContent: string;
   noteId?: string;
   onBack: () => void;
+  onAddToNote?: (content: string) => void;
 }
 
-const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChatProps) => {
+const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack, onAddToNote }: AIChatProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [retryMessage, setRetryMessage] = useState<string | null>(null);
@@ -26,10 +26,8 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
 
   useEffect(() => {
     scrollToBottom();
-    // Focus sur l'input quand le chat s'ouvre
     setTimeout(() => inputRef.current?.focus(), 100);
     
-    // Charger l'historique de conversation si noteId est fourni
     if (noteId && messages.length === 0) {
       const history = getChatHistory(noteId);
       if (history && history.length > 0) {
@@ -44,11 +42,9 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   
-  // Fonction pour insérer des emojis dans la réponse
   const enhanceResponseWithEmojis = (response: string): string => {
     if (!response) return response;
     
-    // Liste d'emojis associés à des mots-clés
     const emojiMappings = [
       { keywords: ['résumé', 'synthèse', 'récapitulatif'], emoji: '📝' },
       { keywords: ['important', 'crucial', 'essentiel', 'vital'], emoji: '⚠️' },
@@ -69,11 +65,9 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
       { keywords: ['solution', 'résolution'], emoji: '🔑' }
     ];
     
-    // Fonction pour ajouter des emojis aux titres
     const enhanceTitles = (text: string): string => {
       return text.replace(/^(#+)\s+(.+)$/gm, (match, hashes, title) => {
-        // Trouver un emoji approprié
-        let emoji = '✨'; // Emoji par défaut
+        let emoji = '✨';
         
         for (const mapping of emojiMappings) {
           if (mapping.keywords.some(keyword => title.toLowerCase().includes(keyword))) {
@@ -86,11 +80,9 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
       });
     };
     
-    // Fonction pour améliorer les listes
     const enhanceLists = (text: string): string => {
       return text.replace(/^([*-])\s+(.+)$/gm, (match, bullet, item) => {
-        // Trouver un emoji approprié
-        let emoji = '•'; // Emoji par défaut
+        let emoji = '•';
         
         for (const mapping of emojiMappings) {
           if (mapping.keywords.some(keyword => item.toLowerCase().includes(keyword))) {
@@ -103,7 +95,6 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
       });
     };
     
-    // Appliquer les améliorations
     let enhancedResponse = enhanceTitles(response);
     enhancedResponse = enhanceLists(enhancedResponse);
     
@@ -128,7 +119,6 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
       console.log("Réponse reçue:", response);
       
       if (response) {
-        // Améliorer la réponse avec des emojis
         const enhancedResponse = enhanceResponseWithEmojis(response);
         onSendMessage(enhancedResponse, 'assistant');
       } else {
@@ -137,7 +127,6 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
     } catch (error) {
       console.error("Erreur de chat:", error);
       
-      // Stocker le message pour permettre une nouvelle tentative
       setRetryMessage(messageToSend);
       
       toast.error("Erreur lors de la conversation avec l'IA");
@@ -164,6 +153,19 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleAddLastResponseToNote = () => {
+    const lastAssistantMessage = [...messages]
+      .reverse()
+      .find(msg => msg.role === 'assistant');
+      
+    if (lastAssistantMessage && onAddToNote) {
+      onAddToNote(lastAssistantMessage.content);
+      toast.success("Contenu ajouté à la note");
+    } else {
+      toast.error("Aucune réponse à ajouter");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b bg-card">
@@ -175,7 +177,19 @@ const AIChat = ({ messages, onSendMessage, noteContent, noteId, onBack }: AIChat
           <Bot className="h-5 w-5 text-primary" />
           DeepNote Assistant
         </CardTitle>
-        <div className="w-20"></div> {/* Spacer pour centrer le titre */}
+        
+        {onAddToNote && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleAddLastResponseToNote}
+            disabled={!messages.some(msg => msg.role === 'assistant')}
+            className="gap-1"
+          >
+            <FileEdit className="h-4 w-4" />
+            <span className="hidden sm:inline">Ajouter à la note</span>
+          </Button>
+        )}
       </div>
 
       <ScrollArea className="flex-1 px-4 py-6">

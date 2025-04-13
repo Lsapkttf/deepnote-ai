@@ -171,6 +171,14 @@ const Index = () => {
     }
   };
 
+  const handleAddAIContentToNote = (content: string) => {
+    if (currentNote) {
+      const updatedContent = currentNote.content + "\n\n" + content;
+      updateNote(currentNote.id, { content: updatedContent });
+      setView("editor");
+    }
+  };
+
   const filteredNotes = notes.filter(note => {
     if (selectedCategory === "notes" && note.archived) return false;
     if (selectedCategory === "recent") {
@@ -464,6 +472,7 @@ const Index = () => {
               noteContent={currentNote.content}
               noteId={currentNote.id}
               onBack={() => setView("editor")}
+              onAddToNote={handleAddAIContentToNote}
             />
           )}
         </main>

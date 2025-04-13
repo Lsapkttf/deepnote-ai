@@ -3,17 +3,19 @@ import { useState, useEffect, useRef } from "react";
 import { Note, NoteColor, AIAnalysis, ChatMessage } from "@/types/note";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { analyzeText } from "@/services/aiService";
+import { analyzeText, chatWithAI } from "@/services/aiService";
 import { toast } from "sonner";
+import RichTextEditor from "./RichTextEditor";
 import { 
   Save, 
   ArrowLeft, 
   BrainCircuit, 
   MessageCircle, 
-  MoreVertical
+  MoreVertical,
+  FileCode,
+  Wand2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,6 +23,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AIChat from "./AIChat";
 
@@ -45,38 +54,50 @@ const NoteEditor = ({
 }: NoteEditorProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [richContent, setRichContent] = useState("");
   const [color, setColor] = useState<NoteColor>("yellow");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisTab, setAnalysisTab] = useState("summary");
+  const [isAiPromptOpen, setIsAiPromptOpen] = useState(false);
+  const [promptText, setPromptText] = useState("");
+  const [isProcessingPrompt, setIsProcessingPrompt] = useState(false);
+  const [editorMode, setEditorMode] = useState<"plain" | "rich">("plain");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (note) {
       setTitle(note.title);
-      setContent(note.type === 'voice' && note.transcription 
+      const noteContent = note.type === 'voice' && note.transcription 
         ? note.transcription 
-        : note.content);
+        : note.content;
+      setContent(noteContent);
+      setRichContent(noteContent);
       setColor(note.color);
     } else {
       setTitle("");
       setContent("");
+      setRichContent("");
       setColor("yellow");
     }
   }, [note]);
 
   const handleSave = () => {
+    const finalContent = editorMode === "rich" ? richContent : content;
+    
     if (note) {
-      onUpdate(note.id, { title, content, color });
+      onUpdate(note.id, { title, content: finalContent, color });
       toast.success("Note mise à jour");
     } else {
-      onSave(title, content, color);
+      onSave(title, finalContent, color);
       toast.success("Note créée");
     }
   };
 
   const handleAnalyze = async () => {
-    if (!content.trim()) {
+    const textToAnalyze = editorMode === "rich" ? richContent : content;
+    
+    if (!textToAnalyze.trim()) {
       toast.error("Veuillez d'abord saisir du contenu à analyser");
       return;
     }
@@ -85,7 +106,7 @@ const NoteEditor = ({
       setIsAnalyzing(true);
       toast.info("Analyse en cours...");
       
-      const analysis = await analyzeText(content);
+      const analysis = await analyzeText(textToAnalyze);
       setAIAnalysis(analysis);
       
       toast.success("Analyse terminée");
@@ -99,6 +120,54 @@ const NoteEditor = ({
 
   const handleColorChange = (newColor: NoteColor) => {
     setColor(newColor);
+  };
+  
+  const handleAIGenerate = async () => {
+    if (!promptText.trim()) {
+      toast.error("Veuillez saisir une demande pour l'IA");
+      return;
+    }
+    
+    setIsProcessingPrompt(true);
+    
+    try {
+      const currentText = editorMode === "rich" ? richContent : content;
+      const prompt = `Sur la base de cette note existante: "${currentText}"\n\nVoici ma demande: ${promptText}\n\nGénérer du contenu qui complète ma note existante. Réponds uniquement avec le contenu à ajouter, sans phrases d'introduction ou de conclusion.`;
+      
+      const response = await chatWithAI(prompt, currentText, note?.id);
+      
+      if (editorMode === "rich") {
+        // Pour le mode riche, on ajoute le contenu généré à la fin
+        setRichContent(prev => prev + "\n\n" + response);
+      } else {
+        // Pour le mode texte simple, on ajoute aussi à la fin
+        setContent(prev => prev + "\n\n" + response);
+      }
+      
+      // Sauvegarder automatiquement la note après l'ajout du contenu IA
+      if (note) {
+        const updatedContent = editorMode === "rich" 
+          ? richContent + "\n\n" + response 
+          : content + "\n\n" + response;
+        
+        onUpdate(note.id, { 
+          content: updatedContent
+        });
+        toast.success("Contenu IA ajouté et note mise à jour");
+      } else {
+        toast.success("Contenu IA ajouté");
+      }
+      
+      // Fermer la boîte de dialogue
+      setIsAiPromptOpen(false);
+      setPromptText("");
+      
+    } catch (error) {
+      console.error("Erreur de génération:", error);
+      toast.error("Erreur lors de la génération du contenu");
+    } finally {
+      setIsProcessingPrompt(false);
+    }
   };
 
   const menuClassName = isMobile 
@@ -126,6 +195,14 @@ const NoteEditor = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setEditorMode(editorMode === "plain" ? "rich" : "plain")}>
+                  <FileCode className="h-4 w-4 mr-2" />
+                  {editorMode === "plain" ? "Éditeur enrichi" : "Éditeur simple"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsAiPromptOpen(true)}>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Générer avec IA
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleAnalyze} disabled={isAnalyzing}>
                   <BrainCircuit className="h-4 w-4 mr-2" />
                   {isAnalyzing ? "Analyse..." : "Analyser"}
@@ -142,6 +219,26 @@ const NoteEditor = ({
             </DropdownMenu>
           ) : (
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditorMode(editorMode === "plain" ? "rich" : "plain")}
+                className="h-8 px-2"
+              >
+                <FileCode className="h-4 w-4 mr-1" />
+                {editorMode === "plain" ? "Éditeur enrichi" : "Éditeur simple"}
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAiPromptOpen(true)}
+                className="h-8 px-2"
+              >
+                <Wand2 className="h-4 w-4 mr-1" />
+                Générer avec IA
+              </Button>
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -202,13 +299,21 @@ const NoteEditor = ({
             className="text-lg font-medium mb-2 bg-transparent border-none focus-visible:ring-0 p-1 w-full"
           />
 
-          <Textarea
-            ref={textareaRef}
-            placeholder="Contenu de la note..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full flex-1 resize-none bg-transparent border-none focus-visible:ring-0 p-1"
-          />
+          {editorMode === "plain" ? (
+            <textarea
+              ref={textareaRef}
+              placeholder="Contenu de la note..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full flex-1 resize-none bg-transparent border-none focus-visible:ring-0 p-1"
+            />
+          ) : (
+            <RichTextEditor 
+              value={richContent}
+              onChange={setRichContent}
+              className="flex-1"
+            />
+          )}
         </div>
 
         {aiAnalysis && (
@@ -259,6 +364,42 @@ const NoteEditor = ({
           </div>
         )}
       </div>
+      
+      {/* Dialogue pour la génération IA */}
+      <Dialog open={isAiPromptOpen} onOpenChange={setIsAiPromptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Générer du contenu avec l'IA</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Décrivez ce que vous souhaitez que l'IA ajoute à votre note.
+            </p>
+            <textarea
+              className="w-full min-h-[100px] p-3 border rounded-md"
+              placeholder="Ex: Ajoute une liste des avantages et inconvénients, Développe l'idée du paragraphe 2, Suggère une conclusion..."
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              disabled={isProcessingPrompt}
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAiPromptOpen(false)}
+              disabled={isProcessingPrompt}
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleAIGenerate}
+              disabled={!promptText.trim() || isProcessingPrompt}
+            >
+              {isProcessingPrompt ? "Génération en cours..." : "Générer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
