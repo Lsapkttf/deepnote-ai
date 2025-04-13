@@ -51,7 +51,7 @@ const NoteCard = ({
         onClick={onClick}
         className={cn(
           "note-card transition-all duration-200 hover:shadow-md rounded-lg border border-border",
-          `note-card-${note.color}`,
+          `bg-note-${note.color}`,
           note.pinned && "ring-2 ring-primary/50",
           "flex items-center gap-3 pr-2"
         )}
@@ -114,8 +114,8 @@ const NoteCard = ({
       onMouseLeave={() => setShowActions(false)}
       onTouchStart={() => setShowActions(true)}
       className={cn(
-        "note-card relative group h-full",
-        `note-card-${note.color}`,
+        "note-card relative group h-full p-4 rounded-lg border border-border",
+        `bg-note-${note.color}`,
         note.pinned && "ring-2 ring-primary/50"
       )}
     >

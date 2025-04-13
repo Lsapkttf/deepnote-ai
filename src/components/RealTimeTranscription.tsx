@@ -20,6 +20,7 @@ const RealTimeTranscription: React.FC<RealTimeTranscriptionProps> = ({
   const [finalTranscript, setFinalTranscript] = useState("");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [isSupported, setIsSupported] = useState(true);
+  const shouldRestartRef = useRef(true);
 
   useEffect(() => {
     // Vérifier si la Web Speech API est supportée
@@ -31,6 +32,7 @@ const RealTimeTranscription: React.FC<RealTimeTranscriptionProps> = ({
     // Nettoyer lors du démontage du composant
     return () => {
       if (recognitionRef.current) {
+        shouldRestartRef.current = false;
         recognitionRef.current.stop();
       }
     };
@@ -74,6 +76,8 @@ const RealTimeTranscription: React.FC<RealTimeTranscriptionProps> = ({
         
         if (event.error === 'not-allowed') {
           toast.error("L'accès au microphone a été refusé");
+          shouldRestartRef.current = false;
+          setIsListening(false);
         } else if (event.error === 'no-speech') {
           // Pas d'erreur à afficher ici car c'est commun
         } else {
@@ -82,13 +86,25 @@ const RealTimeTranscription: React.FC<RealTimeTranscriptionProps> = ({
       };
       
       recognitionRef.current.onend = () => {
-        // Ne pas réinitialiser l'écoute si elle a été arrêtée intentionnellement
-        if (isListening) {
-          // Redémarrer la reconnaissance pour qu'elle soit continue
-          recognitionRef.current?.start();
+        // Redémarrer automatiquement si l'utilisateur n'a pas explicitement arrêté
+        if (shouldRestartRef.current && isListening) {
+          console.log("Redémarrage automatique de la reconnaissance vocale...");
+          try {
+            // Petit délai avant redémarrage pour éviter des problèmes
+            setTimeout(() => {
+              if (shouldRestartRef.current && isListening) {
+                recognitionRef.current?.start();
+              }
+            }, 300);
+          } catch (error) {
+            console.error("Erreur lors du redémarrage de la reconnaissance vocale:", error);
+          }
+        } else {
+          setIsListening(false);
         }
       };
       
+      shouldRestartRef.current = true;
       recognitionRef.current.start();
     } catch (error) {
       console.error("Erreur lors de l'initialisation de la reconnaissance vocale:", error);
@@ -99,6 +115,7 @@ const RealTimeTranscription: React.FC<RealTimeTranscriptionProps> = ({
 
   const stopListening = () => {
     if (recognitionRef.current) {
+      shouldRestartRef.current = false;
       recognitionRef.current.stop();
       setIsListening(false);
       toast.success("Écoute terminée");
@@ -193,6 +210,11 @@ const RealTimeTranscription: React.FC<RealTimeTranscriptionProps> = ({
               <p className="text-sm mt-1">
                 Parlez clairement en français
               </p>
+              {isListening && (
+                <p className="text-xs mt-1 text-green-500">
+                  La transcription continue même si vous faites des pauses
+                </p>
+              )}
             </div>
             
             <div className="w-full">
