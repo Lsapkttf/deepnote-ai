@@ -2,291 +2,194 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 45 100% 50%;
-    --primary-foreground: 45 100% 10%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 262 83.3% 57.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262 83.3% 57.8%;
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
     
-    /* Note colors - Light mode */
-    --note-yellow: 45 100% 96%;
-    --note-yellow-text: 45 100% 15%;
-    --note-red: 0 100% 95%;
-    --note-red-text: 0 100% 15%; 
-    --note-green: 142 76% 95%;
-    --note-green-text: 142 76% 15%;
-    --note-blue: 211 100% 95%;
-    --note-blue-text: 211 100% 15%;
-    --note-purple: 270 76% 95%;
-    --note-purple-text: 270 76% 15%;
-    --note-orange: 25 100% 95%;
-    --note-orange-text: 25 100% 15%;
+    /* Couleurs pour les notes */
+    --note-yellow: 49 95% 82%;
+    --note-red: 0 85% 85%;
+    --note-green: 142 69% 80%;
+    --note-blue: 210 85% 85%;
+    --note-purple: 270 75% 85%;
+    --note-orange: 31 90% 80%;
   }
-
+ 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 45 70% 50%;
-    --primary-foreground: 45 10% 10%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 263 85% 60%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 262 83.3% 57.8%;
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-    
-    /* Dark mode note colors - Amélioré pour plus de lisibilité avec texte en noir */
-    --note-yellow: 45 70% 80%;
-    --note-yellow-text: 0 0% 0%;
-    --note-red: 0 70% 80%;
-    --note-red-text: 0 0% 0%;
-    --note-green: 142 46% 80%;
-    --note-green-text: 0 0% 0%;
-    --note-blue: 211 70% 80%;
-    --note-blue-text: 0 0% 0%;
-    --note-purple: 270 46% 80%;
-    --note-purple-text: 0 0% 0%;
-    --note-orange: 25 70% 80%;
-    --note-orange-text: 0 0% 0%;
+    /* Couleurs pour les notes en mode sombre */
+    --note-yellow: 49 70% 40%;
+    --note-red: 0 70% 45%;
+    --note-green: 142 50% 35%;
+    --note-blue: 210 70% 40%;
+    --note-purple: 270 65% 40%;
+    --note-orange: 31 70% 45%;
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground antialiased transition-colors duration-200;
-    overscroll-behavior: none;
-    touch-action: manipulation;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Pour empêcher le zoom sur iOS lors du focus des inputs */
-  input, textarea, select, button {
-    font-size: 16px;
+  /* Assurer que tout texte est bien visible en mode sombre */
+  .dark p, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6, .dark span, .dark div {
+    color: hsl(var(--foreground));
+  }
+  
+  /* Styles pour les couleurs des notes */
+  .bg-note-yellow {
+    background-color: hsl(var(--note-yellow));
+  }
+  .bg-note-red {
+    background-color: hsl(var(--note-red));
+  }
+  .bg-note-green {
+    background-color: hsl(var(--note-green));
+  }
+  .bg-note-blue {
+    background-color: hsl(var(--note-blue));
+  }
+  .bg-note-purple {
+    background-color: hsl(var(--note-purple));
+  }
+  .bg-note-orange {
+    background-color: hsl(var(--note-orange));
+  }
+  
+  .bg-note-yellow\/20 {
+    background-color: hsl(var(--note-yellow) / 0.2);
+  }
+  .bg-note-red\/20 {
+    background-color: hsl(var(--note-red) / 0.2);
+  }
+  .bg-note-green\/20 {
+    background-color: hsl(var(--note-green) / 0.2);
+  }
+  .bg-note-blue\/20 {
+    background-color: hsl(var(--note-blue) / 0.2);
+  }
+  .bg-note-purple\/20 {
+    background-color: hsl(var(--note-purple) / 0.2);
+  }
+  .bg-note-orange\/20 {
+    background-color: hsl(var(--note-orange) / 0.2);
   }
 }
 
-.note-card {
-  @apply p-4 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md;
-}
-
-.note-card-yellow {
-  @apply bg-note-yellow dark:bg-note-yellow;
-  color: hsl(var(--note-yellow-text));
-}
-
-.note-card-red {
-  @apply bg-note-red dark:bg-note-red;
-  color: hsl(var(--note-red-text));
-}
-
-.note-card-green {
-  @apply bg-note-green dark:bg-note-green;
-  color: hsl(var(--note-green-text));
-}
-
-.note-card-blue {
-  @apply bg-note-blue dark:bg-note-blue;
-  color: hsl(var(--note-blue-text));
-}
-
-.note-card-purple {
-  @apply bg-note-purple dark:bg-note-purple;
-  color: hsl(var(--note-purple-text));
-}
-
-.note-card-orange {
-  @apply bg-note-orange dark:bg-note-orange;
-  color: hsl(var(--note-orange-text));
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
+/* Animation pour l'enregistrement */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.slide-up {
-  animation: slideUp 0.3s ease-in-out;
-}
-
-.animate-pulse {
-  animation: pulse 2s infinite;
-}
-
-/* Rendre les transitions plus fluides */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
-}
-
-/* Amélioration de la réactivité */
-.responsive-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-/* Améliorations pour Mobile */
-@media (max-width: 640px) {
-  .fixed-mobile-bottom {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   }
-  
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
   }
-  
-  .pt-safe {
-    padding-top: env(safe-area-inset-top, 1rem);
-  }
-  
-  /* Amélioration des boutons sur mobile */
-  button, .button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
-/* Animation pour l'enregistrement vocal */
-@keyframes recording-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
   }
 }
 
 .recording-pulse {
-  animation: recording-pulse 1.5s ease-in-out infinite;
+  animation: pulse 2s infinite;
 }
 
-/* Ombres plus douces */
-.shadow-smooth {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+/* Assurer que les barres de défilement sont cohérentes */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.dark .shadow-smooth {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Effet de survol amélioré */
-.hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
 }
 
-.hover-lift:hover {
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Transitions fluides pour les changements de mode */
+html {
+  transition: background-color 0.3s ease;
+}
+
+/* Styles pour le bouton flottant d'action */
+.fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fab:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Style de Google Keep-like */
-.keep-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-  padding: 16px;
+/* Style pour les Chips / Tags */
+.chip {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
 }
 
-.keep-note {
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  transition: all 0.2s ease;
-  overflow: hidden;
+.chip-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/80;
 }
 
-.keep-note:hover {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.chip-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
 }
 
-/* Ensure note text is black in dark mode */
-.dark .note-card * {
-  color: black;
+.chip-outline {
+  @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
 }

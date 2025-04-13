@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
-import VoiceRecorder from "@/components/VoiceRecorder";
+import RealTimeTranscription from "@/components/RealTimeTranscription";
 import AIChat from "@/components/AIChat";
 import SettingsDialog from "@/components/SettingsDialog";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -61,7 +61,7 @@ const Index = () => {
   } = useNoteStore();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [view, setView] = useState<"list" | "editor" | "recorder" | "chat">("list");
+  const [view, setView] = useState<"list" | "editor" | "recorder" | "transcription" | "chat">("list");
   const [selectedCategory, setSelectedCategory] = useState("notes");
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -265,6 +265,14 @@ const Index = () => {
     </div>
   );
 
+  const handleNewTranscription = () => {
+    setView("transcription");
+  };
+
+  const handleCancelTranscription = () => {
+    setView("list");
+  };
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {!isMobile && <AppBar />}
@@ -273,7 +281,7 @@ const Index = () => {
         <MobileNav 
           onOpenSidebar={toggleSidebar}
           onNewTextNote={handleNewTextNote}
-          onNewVoiceNote={handleNewVoiceNote}
+          onNewVoiceNote={handleNewTranscription}
           searchQuery={searchQuery}
           onSearchChange={handleSearch}
           onOpenSettings={() => setSettingsDialogOpen(true)}
@@ -285,7 +293,7 @@ const Index = () => {
           isOpen={sidebarOpen}
           onClose={closeSidebar}
           onNewTextNote={handleNewTextNote}
-          onNewVoiceNote={handleNewVoiceNote}
+          onNewVoiceNote={handleNewTranscription}
           onSelectCategory={handleSelectCategory}
           selectedCategory={selectedCategory}
         />
@@ -359,11 +367,11 @@ const Index = () => {
                     <FuturisticButton 
                       variant="outline" 
                       size="sm"
-                      onClick={handleNewVoiceNote}
+                      onClick={handleNewTranscription}
                       className="h-9"
                     >
                       <Mic className="h-4 w-4 mr-2" />
-                      Note vocale
+                      Transcription vocale
                     </FuturisticButton>
                     
                     <FuturisticButton 
@@ -442,10 +450,10 @@ const Index = () => {
             />
           )}
           
-          {view === "recorder" && (
-            <VoiceRecorder
-              onTranscriptionComplete={handleTranscriptionComplete}
-              onCancel={handleCancelRecording}
+          {view === "transcription" && (
+            <RealTimeTranscription
+              onSave={handleTranscriptionComplete}
+              onCancel={handleCancelTranscription}
             />
           )}
           
@@ -453,9 +461,7 @@ const Index = () => {
             <AIChat
               messages={chatMessages}
               onSendMessage={handleSendMessage}
-              noteContent={currentNote.type === 'voice' && currentNote.transcription 
-                ? currentNote.transcription 
-                : currentNote.content}
+              noteContent={currentNote.content}
               noteId={currentNote.id}
               onBack={() => setView("editor")}
             />

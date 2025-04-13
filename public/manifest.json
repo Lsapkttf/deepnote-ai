@@ -35,8 +35,8 @@
       ]
     },
     {
-      "name": "Note vocale",
-      "url": "/?action=voice",
+      "name": "Transcription vocale",
+      "url": "/?action=transcription",
       "icons": [
         {
           "src": "/icons/icon-192x192.png",
