@@ -2,12 +2,12 @@
 import { toast } from "sonner";
 
 // URL de l'espace Hugging Face
-const WHISPER_API_URL = 'https://api-inference.huggingface.co/models/openai/whisper-large-v3';
+const WHISPER_API_URL = 'https://huggingface.co/spaces/Lsapk/whisper-asr/api/predict';
 const HF_TOKEN = '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';
 
 // Interface pour la réponse de l'API
 interface WhisperResponse {
-  text?: string;
+  data?: string[];
   error?: string;
 }
 
@@ -27,13 +27,17 @@ export const transcribeWithWhisper = async (audioBlob: Blob): Promise<string> =>
     console.log("Type du blob audio:", audioBlob.type);
     console.log("Taille du blob audio:", Math.round(audioBlob.size / 1024), "KB");
     
-    // Envoyer la requête à l'API Hugging Face directement
+    // Créer un FormData pour envoyer le fichier audio
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'audio.webm');
+    
+    // Envoyer la requête à l'API Hugging Face
     const response = await fetch(WHISPER_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${HF_TOKEN}`
       },
-      body: audioBlob
+      body: formData
     });
     
     if (!response.ok) {
@@ -49,8 +53,8 @@ export const transcribeWithWhisper = async (audioBlob: Blob): Promise<string> =>
       throw new Error(`Erreur Whisper: ${result.error}`);
     }
     
-    // Extraire la transcription
-    const transcription = result.text || "";
+    // Extraire la transcription (la structure exacte dépend de la réponse de l'API)
+    const transcription = result.data && result.data.length > 0 ? result.data[0] : "";
     
     if (!transcription) {
       throw new Error("Aucune transcription reçue");
@@ -88,4 +92,3 @@ export const testWhisperConnection = async (): Promise<boolean> => {
     return false;
   }
 };
-

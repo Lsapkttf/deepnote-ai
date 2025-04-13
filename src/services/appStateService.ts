@@ -15,7 +15,7 @@ export const checkIfPWAInstallable = (): boolean => {
     /WebKit/.test(navigator.userAgent) && 
     !/(CriOS|FxiOS|OPiOS|mercury)/.test(navigator.userAgent);
   
-  // Si nous sommes sur mobile mais pas en standalone
+  // Vérifier si nous sommes sur un appareil mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   console.log("Installation PWA - État:", { 
@@ -26,6 +26,9 @@ export const checkIfPWAInstallable = (): boolean => {
     userAgent: navigator.userAgent
   });
   
+  // L'application peut être installée si:
+  // 1. Nous sommes dans un navigateur (pas déjà installé)
+  // 2. Et soit l'API d'installation est disponible, soit c'est Safari sur iOS
   return (isInBrowser && (hasInstallPrompt || (isSafariIOS && isMobile)));
 };
 

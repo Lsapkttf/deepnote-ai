@@ -6,7 +6,7 @@
   "id": "/",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#6d28d9",
   "icons": [
@@ -63,5 +63,13 @@
   "related_applications": [],
   "capture_links": "existing_client_event",
   "scope": "/",
-  "dir": "ltr"
+  "dir": "ltr",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

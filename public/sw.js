@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'deepnote-v2';
+const CACHE_NAME = 'deepnote-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -54,10 +54,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Stratégie de cache: Network First, falling back to cache
+// Stratégie de cache: Cache First, falling back to network
 self.addEventListener('fetch', (event) => {
   // Ne pas intercepter les requêtes vers des API
-  if (event.request.url.includes('/api/') || event.request.url.includes('hf.space')) {
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes('huggingface.co') || 
+      event.request.url.includes('hf.space')) {
     return;
   }
   
@@ -69,114 +71,79 @@ self.addEventListener('fetch', (event) => {
   console.log('Service Worker: Récupération', event.request.url);
   
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Cloner la réponse, car elle ne peut être consommée qu'une fois
-        const clonedResponse = networkResponse.clone();
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        // Retourner le cache si disponible
+        if (cachedResponse) {
+          // En arrière-plan, mettre à jour le cache avec la nouvelle version
+          fetch(event.request)
+            .then((networkResponse) => {
+              if (networkResponse.ok) {
+                const clonedResponse = networkResponse.clone();
+                caches.open(CACHE_NAME)
+                  .then((cache) => {
+                    cache.put(event.request, clonedResponse);
+                  });
+              }
+            })
+            .catch(() => {
+              // Ne rien faire si la mise à jour échoue
+            });
+            
+          return cachedResponse;
+        }
         
-        // Mettre en cache la nouvelle réponse
-        caches.open(CACHE_NAME)
-          .then((cache) => {
-            cache.put(event.request, clonedResponse);
-          });
-          
-        return networkResponse;
-      })
-      .catch(() => {
-        console.log('Service Worker: Utilisation du cache pour', event.request.url);
-        return caches.match(event.request)
-          .then((response) => {
-            if (response) {
-              return response;
+        // Sinon, aller sur le réseau
+        return fetch(event.request)
+          .then((networkResponse) => {
+            // Vérifier si la requête a réussi
+            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+              return networkResponse;
             }
             
-            // Si la ressource n'est pas dans le cache et que c'est une page HTML
+            // Cloner la réponse pour le cache et le client
+            const responseToCache = networkResponse.clone();
+            
+            // Ajouter au cache
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+              
+            return networkResponse;
+          })
+          .catch(() => {
+            // En cas d'erreur réseau pour une page HTML, retourner la page d'accueil
             if (event.request.headers.get('accept') && 
                 event.request.headers.get('accept').includes('text/html')) {
               return caches.match('/');
             }
             
-            return new Response('Not found', { status: 404 });
+            return new Response('Contenu indisponible hors-ligne', { 
+              status: 503,
+              headers: { 'Content-Type': 'text/plain' }
+            });
           });
       })
   );
 });
 
-// Gestion des messages
+// Gestion des messages pour la mise à jour du Service Worker
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'skipWaiting') {
     self.skipWaiting();
   }
 });
 
-// Synchronisation en arrière-plan
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-notes') {
-    event.waitUntil(syncNotes());
-  }
-});
-
-// Fonction pour synchroniser les notes avec le serveur
-const syncNotes = async () => {
-  try {
-    // Récupérer les données en attente de synchronisation
-    const dataToSync = await getUnsynedData();
-    
-    if (dataToSync && dataToSync.length) {
-      // Synchroniser chaque note
-      const syncPromises = dataToSync.map(item => {
-        return fetch('/api/sync', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(item)
-        });
-      });
-      
-      await Promise.all(syncPromises);
-      
-      // Marquer les données comme synchronisées
-      await markAsSynced(dataToSync);
-      
-      // Notifier les clients
-      const clients = await self.clients.matchAll();
+// Notification de mise à jour disponible
+self.addEventListener('statechange', () => {
+  if (self.state === 'installed' && self.clients) {
+    self.clients.matchAll().then(clients => {
       clients.forEach(client => {
         client.postMessage({
-          type: 'SYNC_COMPLETED',
-          count: dataToSync.length
+          type: 'UPDATE_AVAILABLE'
         });
       });
-    }
-  } catch (error) {
-    console.error('Service Worker: Erreur de synchronisation', error);
+    });
   }
-};
-
-// Fonction pour obtenir les données non synchronisées
-const getUnsynedData = async () => {
-  // Dans une implémentation réelle, cela pourrait venir d'IndexedDB
-  return [];
-};
-
-// Fonction pour marquer les données comme synchronisées
-const markAsSynced = async (data) => {
-  // Dans une implémentation réelle, mettre à jour IndexedDB
-};
-
-// Notification de mise à jour disponible
-self.addEventListener('updatefound', () => {
-  const newWorker = self.installing;
-
-  newWorker.addEventListener('statechange', () => {
-    if (newWorker.state === 'installed' && self.clients) {
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'UPDATE_AVAILABLE'
-          });
-        });
-      });
-    }
-  });
 });
