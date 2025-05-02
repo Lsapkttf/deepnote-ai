@@ -1,3 +1,4 @@
+
 export type NoteColor = "yellow" | "red" | "green" | "blue" | "purple" | "orange";
 
 export interface Note {
@@ -30,6 +31,6 @@ export interface AppSettings {
   apiKey: string;
   darkMode: boolean;
   language: "fr" | "en";
-  notifications?: boolean;
-  autoSave?: boolean;
+  notifications: boolean;
+  autoSave: boolean;
 }

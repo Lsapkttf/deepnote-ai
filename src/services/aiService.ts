@@ -1,6 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-import { AIAnalysis } from "@/types/note";
+import { AIAnalysis, ChatMessage } from "@/types/note";
 import { toast } from "sonner";
 
 // Vérifier si la clé API est configurée
@@ -18,7 +19,7 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
       throw new Error("Clé API non configurée");
     }
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -95,7 +96,7 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
     // Enrichir la demande avec des instructions pour des réponses plus engageantes
     const enhancedPrompt = `${context}${message}\n\nRéponds de manière utile, amicale et engageante. Utilise des emojis appropriés et un style conversationnel. Sois précis et direct dans ta réponse.`;
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -147,6 +148,13 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
     toast.error(`Erreur IA: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
     throw error;
   }
+};
+
+// Fonction pour récupérer l'historique des conversations
+export const getChatHistory = (noteId: string): ChatMessage[] => {
+  // Pour le moment, on retourne un tableau vide car on n'a pas encore implémenté
+  // la persistance des conversations. Cela pourrait être ajouté dans le futur.
+  return [];
 };
 
 // Fonction pour transcrire de l'audio
