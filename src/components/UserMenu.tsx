@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, CreditCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ const UserMenu = () => {
     try {
       await signOut();
       navigate("/auth");
+      toast.success("Déconnexion réussie");
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
       toast.error("Erreur lors de la déconnexion");
@@ -69,6 +70,13 @@ const UserMenu = () => {
           >
             <User className="mr-2 h-4 w-4" />
             <span>Profil</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => navigate("/subscription")}
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            <span>Abonnement</span>
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"

@@ -15,8 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { AppSettings } from "@/types/note";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Save, Settings, Moon, SunMedium, Globe, Key, Shield, UserCircle } from "lucide-react";
+import { Save, Settings, Moon, SunMedium, Globe, Shield, UserCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SettingsDialogProps {
@@ -55,10 +54,9 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   }, [open]);
 
   const handleSave = () => {
-    // Sauvegarder les paramètres
+    // Sauvegarder les paramètres (sauf la clé API qui est maintenant gérée administrativement)
     localStorage.setItem("darkMode", settings.darkMode.toString());
     localStorage.setItem("language", settings.language);
-    localStorage.setItem("geminiApiKey", settings.apiKey);
     localStorage.setItem("notifications", settings.notifications.toString());
     localStorage.setItem("autoSave", settings.autoSave.toString());
     
@@ -87,14 +85,10 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="general" className="flex items-center gap-1">
               <SunMedium className="h-4 w-4" />
               <span>Général</span>
-            </TabsTrigger>
-            <TabsTrigger value="api" className="flex items-center gap-1">
-              <Key className="h-4 w-4" />
-              <span>API</span>
             </TabsTrigger>
             <TabsTrigger value="account" className="flex items-center gap-1">
               <UserCircle className="h-4 w-4" />
@@ -165,27 +159,6 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
                   </Label>
                 </div>
               </RadioGroup>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="api" className="space-y-6 py-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label className="font-medium">Clé API Gemini</Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Saisissez votre clé API Gemini pour utiliser les fonctionnalités d'intelligence artificielle
-              </p>
-              <Input 
-                type="password" 
-                value={settings.apiKey} 
-                onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
-                placeholder="AIza..."
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Cette clé est utilisée pour les fonctionnalités d'analyse IA et de transcription vocale.
-              </p>
             </div>
           </TabsContent>
 

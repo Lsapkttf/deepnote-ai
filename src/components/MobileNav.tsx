@@ -20,6 +20,8 @@ import {
   Pin,
   Bell,
   User,
+  LogOut,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,8 @@ import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { signOut } from "@/services/authService";
+import { toast } from "sonner";
 
 interface MobileNavProps {
   onOpenSidebar: () => void;
@@ -55,6 +59,17 @@ const MobileNav = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/auth");
+      toast.success("Déconnexion réussie");
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      toast.error("Erreur lors de la déconnexion");
+    }
+  };
 
   if (!isMobile) return null;
 
@@ -127,6 +142,39 @@ const MobileNav = ({
                   </Button>
                 </div>
               </div>
+              
+              <div className="mt-6 px-3">
+                <h3 className="mb-2 px-2 text-xs font-semibold text-muted-foreground">Application</h3>
+                <div className="space-y-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => navigate("/subscription")}
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Abonnement
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={onOpenSettings}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Paramètres
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Déconnexion
+                  </Button>
+                </div>
+              </div>
             </div>
             
             <SheetFooter className="p-4 border-t mt-auto">
@@ -141,9 +189,6 @@ const MobileNav = ({
                     Se connecter
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" onClick={onOpenSettings}>
-                  <Settings className="h-4 w-4" />
-                </Button>
               </div>
             </SheetFooter>
           </SheetContent>
@@ -176,8 +221,6 @@ const MobileNav = ({
         <Button variant="ghost" size="icon" className="rounded-full" onClick={onNewVoiceNote}>
           <Mic className="h-5 w-5" />
         </Button>
-
-        <UserMenu />
       </div>
     </div>
   );

@@ -4,22 +4,22 @@ import { v4 as uuidv4 } from "uuid";
 import { AIAnalysis, ChatMessage } from "@/types/note";
 import { toast } from "sonner";
 
+// Clé API Gemini globale (à configurer côté administrateur)
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
+
 // Vérifier si la clé API est configurée
 export const checkApiKey = (): boolean => {
-  const apiKey = localStorage.getItem("geminiApiKey");
-  return !!apiKey && apiKey.length > 0;
+  return GEMINI_API_KEY && GEMINI_API_KEY.length > 0 && GEMINI_API_KEY !== "YOUR_GEMINI_API_KEY_HERE";
 };
 
 // Fonction pour analyser du texte
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   try {
-    const apiKey = localStorage.getItem("geminiApiKey");
-    
-    if (!apiKey) {
-      throw new Error("Clé API non configurée");
+    if (!checkApiKey()) {
+      throw new Error("Clé API Gemini non configurée. Veuillez contacter l'administrateur.");
     }
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -84,10 +84,8 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
 // Fonction pour discuter avec l'IA à propos d'une note
 export const chatWithAI = async (message: string, noteContent: string, noteId?: string): Promise<string> => {
   try {
-    const apiKey = localStorage.getItem("geminiApiKey");
-    
-    if (!apiKey) {
-      throw new Error("Clé API non configurée");
+    if (!checkApiKey()) {
+      throw new Error("Clé API Gemini non configurée. Veuillez contacter l'administrateur.");
     }
     
     // Construction du contexte avec le contenu de la note
@@ -96,7 +94,7 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
     // Enrichir la demande avec des instructions pour des réponses plus engageantes
     const enhancedPrompt = `${context}${message}\n\nRéponds de manière utile, amicale et engageante. Utilise des emojis appropriés et un style conversationnel. Sois précis et direct dans ta réponse.`;
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -160,10 +158,8 @@ export const getChatHistory = (noteId: string): ChatMessage[] => {
 // Fonction pour transcrire de l'audio
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   try {
-    const apiKey = localStorage.getItem("geminiApiKey");
-    
-    if (!apiKey) {
-      throw new Error("Clé API non configurée");
+    if (!checkApiKey()) {
+      throw new Error("Clé API Gemini non configurée. Veuillez contacter l'administrateur.");
     }
     
     // Pour la transcription, on utilisera la méthode du service whisperService.ts

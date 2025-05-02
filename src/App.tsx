@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Subscription from "./pages/Subscription";
 import AIAssistant from "./components/AIAssistant";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
@@ -48,6 +49,7 @@ const App = () => {
               <Route path="/auth" element={<Auth />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/" element={<Index />} />
+                <Route path="/subscription" element={<Subscription />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
