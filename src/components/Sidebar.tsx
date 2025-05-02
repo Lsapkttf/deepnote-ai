@@ -14,7 +14,6 @@ import {
   Trash,
   User,
 } from "lucide-react";
-import Logo from "./Logo";
 import { signOut } from "@/services/authService";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -27,6 +26,7 @@ interface SidebarProps {
   onNewVoiceNote: () => void;
   onSelectCategory: (category: string) => void;
   selectedCategory: string;
+  onOpenSettings: () => void;
 }
 
 const Sidebar = ({
@@ -36,6 +36,7 @@ const Sidebar = ({
   onNewVoiceNote,
   onSelectCategory,
   selectedCategory,
+  onOpenSettings,
 }: SidebarProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -58,7 +59,7 @@ const Sidebar = ({
       }`}
     >
       <div className="flex h-16 items-center border-b px-6">
-        <Logo />
+        <h2 className="text-lg font-bold">DeepNote</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -184,7 +185,7 @@ const Sidebar = ({
               variant="outline" 
               size="sm" 
               className="w-full justify-start"
-              onClick={() => navigate("/settings")}
+              onClick={onOpenSettings}
             >
               <Settings className="mr-2 h-4 w-4" />
               Paramètres

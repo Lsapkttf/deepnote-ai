@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { AppSettings } from "@/types/note";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Settings, Moon, SunMedium, Globe, Shield, UserCircle } from "lucide-react";
+import { Save, Settings, Moon, SunMedium, Shield, UserCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SettingsDialogProps {
@@ -25,7 +25,6 @@ interface SettingsDialogProps {
 
 const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   const [settings, setSettings] = useState<AppSettings>({
-    apiKey: "",
     darkMode: false,
     language: "fr",
     notifications: true,
@@ -39,12 +38,10 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
     if (open) {
       const savedDarkMode = localStorage.getItem("darkMode") === "true";
       const savedLanguage = localStorage.getItem("language") as "fr" | "en" || "fr";
-      const savedApiKey = localStorage.getItem("geminiApiKey") || "";
       const savedNotifications = localStorage.getItem("notifications") !== "false";
       const savedAutoSave = localStorage.getItem("autoSave") !== "false";
       
       setSettings({
-        apiKey: savedApiKey,
         darkMode: savedDarkMode,
         language: savedLanguage,
         notifications: savedNotifications,
@@ -54,7 +51,7 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   }, [open]);
 
   const handleSave = () => {
-    // Sauvegarder les paramètres (sauf la clé API qui est maintenant gérée administrativement)
+    // Sauvegarder les paramètres
     localStorage.setItem("darkMode", settings.darkMode.toString());
     localStorage.setItem("language", settings.language);
     localStorage.setItem("notifications", settings.notifications.toString());

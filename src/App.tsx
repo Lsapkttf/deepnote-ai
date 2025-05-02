@@ -17,6 +17,9 @@ const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   useEffect(() => {
+    // Set Gemini API key globally (instead of asking users)
+    localStorage.setItem("geminiApiKey", "AIzaSyAdOinCnHfqjOyk6XBbTzQkR_IOdRvlliU");
+    
     // Empêcher le zoom sur les dispositifs mobiles
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length > 1) {
@@ -53,8 +56,11 @@ const App: React.FC = () => {
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Routes>
+              <Route path="/auth" element={null} />
+              <Route path="*" element={<AIAssistant />} />
+            </Routes>
           </BrowserRouter>
-          <AIAssistant />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

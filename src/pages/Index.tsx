@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import NoteCard from "@/components/NoteCard";
@@ -6,8 +7,6 @@ import RealTimeTranscription from "@/components/RealTimeTranscription";
 import AIChat from "@/components/AIChat";
 import SettingsDialog from "@/components/SettingsDialog";
 import ThemeToggle from "@/components/ThemeToggle";
-import Logo from "@/components/Logo";
-import InstallPWA from "@/components/InstallPWA";
 import MobileNav from "@/components/MobileNav";
 import { Note, NoteColor } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
@@ -20,9 +19,12 @@ import {
   LayoutGrid, 
   LayoutList, 
   Menu, 
-  Settings, 
   X, 
-  ArrowLeft
+  ArrowLeft,
+  Image as ImageIcon,
+  Pencil,
+  CheckSquare,
+  Text,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FuturisticButton from "@/components/FuturisticButton";
@@ -71,7 +73,8 @@ const Index = () => {
   useEffect(() => {
     const hasApiKey = checkApiKey();
     if (!hasApiKey) {
-      setSettingsDialogOpen(true);
+      // Set the API key from localStorage instead of showing the dialog
+      localStorage.setItem("geminiApiKey", "AIzaSyAdOinCnHfqjOyk6XBbTzQkR_IOdRvlliU");
     }
     
     if (localStorage.getItem("darkMode") === "true") {
@@ -253,7 +256,7 @@ const Index = () => {
           </Button>
         )}
         
-        <Logo />
+        <h1 className="text-lg font-bold">DeepNote</h1>
       </div>
 
       <div className="hidden md:block flex-1 max-w-sm mx-auto">
@@ -262,13 +265,6 @@ const Index = () => {
 
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setSettingsDialogOpen(true)}
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
       </div>
     </div>
   );
@@ -279,6 +275,61 @@ const Index = () => {
 
   const handleCancelTranscription = () => {
     setView("list");
+  };
+
+  // Mobile action buttons (visible at bottom of screen)
+  const MobileActionButtons = () => {
+    if (view !== "list") return null;
+    
+    return (
+      <div className="fixed right-4 bottom-20 flex flex-col gap-3 items-end">
+        <Button
+          className="rounded-full bg-amber-600 hover:bg-amber-700 h-14 w-14 shadow-lg"
+          onClick={() => setView("transcription")}
+        >
+          <Mic className="h-6 w-6" />
+        </Button>
+        <Button
+          className="rounded-full bg-primary hover:bg-primary/90 h-14 w-14 shadow-lg"
+          onClick={handleNewTextNote}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
+    );
+  };
+
+  // Mobile floating actions menu
+  const MobileFloatingMenu = () => {
+    if (view !== "editor" || !isMobile) return null;
+
+    const actions = [
+      { icon: <Mic className="h-5 w-5" />, label: "Audio", onClick: () => null },
+      { icon: <ImageIcon className="h-5 w-5" />, label: "Image", onClick: () => null },
+      { icon: <Pencil className="h-5 w-5" />, label: "Dessin", onClick: () => null },
+      { icon: <CheckSquare className="h-5 w-5" />, label: "Liste", onClick: () => null },
+      { icon: <Text className="h-5 w-5" />, label: "Texte", onClick: () => null },
+    ];
+
+    return (
+      <div className="fixed right-4 bottom-20 flex flex-col gap-3 items-end">
+        {actions.map((action, index) => (
+          <Button
+            key={index}
+            className="rounded-full bg-amber-700/80 hover:bg-amber-800 h-14 w-14 shadow-lg"
+            onClick={action.onClick}
+          >
+            {action.icon}
+          </Button>
+        ))}
+        <Button
+          className="rounded-full bg-amber-200 text-amber-900 hover:bg-amber-300 h-14 w-14 shadow-lg"
+          onClick={handleBackToList}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+    );
   };
 
   return (
@@ -304,9 +355,10 @@ const Index = () => {
           onNewVoiceNote={handleNewTranscription}
           onSelectCategory={handleSelectCategory}
           selectedCategory={selectedCategory}
+          onOpenSettings={() => setSettingsDialogOpen(true)}
         />
         
-        <main className={`flex-1 overflow-hidden ${isMobile ? 'pt-16' : ''} md:ml-72`}>
+        <main className={`flex-1 overflow-hidden ${isMobile ? 'pt-0' : ''} md:ml-72`}>
           {view === "list" && (
             <div className="p-4 h-full flex flex-col overflow-hidden">
               <div className="md:hidden mb-4">
@@ -483,7 +535,8 @@ const Index = () => {
         onOpenChange={setSettingsDialogOpen}
       />
       
-      <InstallPWA />
+      {isMobile && <MobileActionButtons />}
+      {isMobile && <MobileFloatingMenu />}
     </div>
   );
 };
