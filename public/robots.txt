@@ -6,4 +6,4 @@ Disallow: /auth
 Disallow: /api/
 Disallow: /settings
 
-Sitemap: https://votre-application.com/sitemap.xml
+Sitemap: https://deepnote-app.com/sitemap.xml

@@ -23,6 +23,22 @@
       "purpose": "any maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screen1.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Page d'accueil de DeepNote"
+    },
+    {
+      "src": "/screenshots/screen2.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Édition de notes"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Nouvelle note",

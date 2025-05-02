@@ -2,7 +2,7 @@
 import { AIAnalysis } from '../types/note';
 import { toast } from "sonner";
 
-// Clé API Gemini fournie par l'utilisateur
+// Clé API Gemini
 const API_KEY = 'AIzaSyAdOinCnHfqjOyk6XBbTzQkR_IOdRvlliU';
 
 // Stockage en mémoire des conversations pour chaque note
@@ -72,9 +72,9 @@ Sentiment:
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Erreur API Gemini:", errorText);
-      throw new Error(`Erreur de connexion: ${response.status}`);
+      const errorData = await response.json();
+      console.error("Erreur API Gemini:", errorData);
+      throw new Error(`Erreur de connexion: ${response.status} - ${errorData?.error?.message || 'Erreur inconnue'}`);
     }
 
     const result = await response.json();
@@ -124,11 +124,11 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
       ? noteContent.substring(0, 3000) + "..." 
       : noteContent;
     
-    let systemPrompt = "Tu es un assistant qui répond à des questions sur le contenu d'une note. Réponds uniquement en te basant sur les informations fournies dans la note. Si la réponse n'est pas dans le contenu, dis-le simplement.";
+    let systemPrompt = "Tu es un assistant qui répond à des questions sur le contenu d'une note. Réponds uniquement en te basant sur les informations fournies dans la note. Si la réponse n'est pas dans le contenu, dis-le simplement. Réponds de façon dynamique et engageante avec des emojis adaptés au contexte.";
     
     // Adapter le prompt système en fonction du contexte (note spécifique ou assistant général)
     if (noteId === "general") {
-      systemPrompt = "Tu es DeepNote Assistant, un assistant IA conçu pour aider les utilisateurs à gérer leurs notes et leurs idées. Tu es serviable, précis et concis. Tu peux aider à créer du contenu pour des notes, suggérer des idées d'organisation, et répondre à diverses questions. Réponds toujours en français.";
+      systemPrompt = "Tu es DeepNote Assistant, un assistant IA conçu pour aider les utilisateurs à gérer leurs notes et leurs idées. Tu es serviable, précis et concis. Tu peux aider à créer du contenu pour des notes, suggérer des idées d'organisation, et répondre à diverses questions. Réponds toujours en français avec un style dynamique et engageant en utilisant des emojis appropriés. Sois créatif et utile.";
     }
     
     // Construire le contenu du message en fonction du contexte
@@ -180,17 +180,17 @@ Question: ${message}`;
         body: JSON.stringify({
           contents: contents,
           generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 500,
+            temperature: 0.8,
+            maxOutputTokens: 800,
           }
         }),
       }
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Erreur API Gemini chat:", errorText);
-      throw new Error(`Erreur de connexion: ${response.status}`);
+      const errorData = await response.json();
+      console.error("Erreur API Gemini chat:", errorData);
+      throw new Error(`Erreur de connexion: ${response.status} - ${errorData?.error?.message || 'Erreur inconnue'}`);
     }
 
     const result = await response.json();
@@ -229,9 +229,9 @@ Question: ${message}`;
     console.error("Erreur de chat:", error);
     
     if (error instanceof Error) {
-      return `Désolé, je n'ai pas pu répondre. Erreur: ${error.message}`;
+      return `🙁 Désolé, je n'ai pas pu répondre. Erreur: ${error.message}`;
     } else {
-      return "Désolé, une erreur est survenue lors de la communication avec l'IA.";
+      return "🙁 Désolé, une erreur est survenue lors de la communication avec l'IA.";
     }
   }
 };

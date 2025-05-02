@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Sheet,
@@ -6,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter,
 } from "@/components/ui/sheet";
 import {
   Plus,
@@ -13,6 +15,11 @@ import {
   Search,
   Settings,
   Menu,
+  Home,
+  Archive,
+  Pin,
+  Bell,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +27,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileNavProps {
   onOpenSidebar: () => void;
@@ -28,6 +37,8 @@ interface MobileNavProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onOpenSettings: () => void;
+  activeFilter?: string;
+  onFilterChange?: (filter: string) => void;
 }
 
 const MobileNav = ({
@@ -37,11 +48,22 @@ const MobileNav = ({
   searchQuery,
   onSearchChange,
   onOpenSettings,
+  activeFilter,
+  onFilterChange,
 }: MobileNavProps) => {
   const isMobile = useIsMobile();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!isMobile) return null;
+
+  const handleFilterClick = (filter: string) => {
+    if (onFilterChange) {
+      onFilterChange(filter);
+      // Close sidebar after selection on mobile
+    }
+  };
 
   return (
     <div className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm border-b">
@@ -52,13 +74,78 @@ const MobileNav = ({
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
-            <SheetHeader className="pl-6 pr-8">
-              <SheetTitle>DeepNote</SheetTitle>
+          <SheetContent side="left" className="p-0 w-64 flex flex-col">
+            <SheetHeader className="pl-6 pr-8 py-4 border-b">
+              <SheetTitle className="flex items-center gap-2">
+                <img src="/icons/icon-192x192.png" alt="Logo" className="w-7 h-7" />
+                DeepNote
+              </SheetTitle>
               <SheetDescription>
-                Accédez rapidement à vos notes et paramètres.
+                Accédez rapidement à vos notes
               </SheetDescription>
             </SheetHeader>
+            
+            <div className="flex flex-col flex-1 overflow-auto py-2">
+              <div className="px-2 space-y-1">
+                <Button
+                  variant={activeFilter === "all" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => handleFilterClick("all")}
+                >
+                  <Home className="mr-2 h-4 w-4" />
+                  Notes
+                </Button>
+                
+                <Button
+                  variant={activeFilter === "pinned" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => handleFilterClick("pinned")}
+                >
+                  <Pin className="mr-2 h-4 w-4" />
+                  Épinglées
+                </Button>
+                
+                <Button
+                  variant={activeFilter === "archived" ? "secondary" : "ghost"}
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => handleFilterClick("archived")}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archives
+                </Button>
+              </div>
+              
+              <div className="mt-6 px-3">
+                <h3 className="mb-2 px-2 text-xs font-semibold text-muted-foreground">Étiquettes</h3>
+                <div className="space-y-1">
+                  <Button variant="ghost" size="sm" className="w-full justify-start">
+                    <Bell className="mr-2 h-4 w-4" />
+                    Rappels
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <SheetFooter className="p-4 border-t mt-auto">
+              <div className="w-full flex items-center justify-between">
+                {user ? (
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm truncate">{user.email}</span>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => navigate('/auth')}>
+                    Se connecter
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={onOpenSettings}>
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </SheetFooter>
           </SheetContent>
         </Sheet>
 
@@ -75,32 +162,22 @@ const MobileNav = ({
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 justify-start"
+            className="flex-1 justify-start text-muted-foreground"
             onClick={() => setIsSearchOpen(true)}
           >
             <Search className="mr-2 h-4 w-4" />
-            Rechercher dans les notes...
+            Rechercher...
           </Button>
         )}
 
-        <Button variant="ghost" size="sm" onClick={onNewTextNote}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={onNewTextNote}>
           <Plus className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={onNewVoiceNote}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={onNewVoiceNote}>
           <Mic className="h-5 w-5" />
         </Button>
 
-        <div className="flex items-center gap-1">
-          <ThemeToggle />
-          <UserMenu />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onOpenSettings}
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-        </div>
+        <UserMenu />
       </div>
     </div>
   );
