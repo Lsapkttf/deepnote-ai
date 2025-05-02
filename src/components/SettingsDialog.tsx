@@ -15,7 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { AppSettings } from "@/types/note";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Settings, Moon, SunMedium, Globe, Key } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Save, Settings, Moon, SunMedium, Globe, Key, Shield, UserCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -24,30 +26,41 @@ interface SettingsDialogProps {
 
 const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   const [settings, setSettings] = useState<AppSettings>({
-    apiKey: "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", // Clé Groq fixe
+    apiKey: "",
     darkMode: false,
-    language: "fr"
+    language: "fr",
+    notifications: true,
+    autoSave: true
   });
   const [activeTab, setActiveTab] = useState("general");
+  const { user } = useAuth();
 
   useEffect(() => {
     // Charger les paramètres existants
     if (open) {
       const savedDarkMode = localStorage.getItem("darkMode") === "true";
       const savedLanguage = localStorage.getItem("language") as "fr" | "en" || "fr";
+      const savedApiKey = localStorage.getItem("geminiApiKey") || "";
+      const savedNotifications = localStorage.getItem("notifications") !== "false";
+      const savedAutoSave = localStorage.getItem("autoSave") !== "false";
       
       setSettings({
-        apiKey: "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", // Toujours utiliser la clé fixe
+        apiKey: savedApiKey,
         darkMode: savedDarkMode,
-        language: savedLanguage
+        language: savedLanguage,
+        notifications: savedNotifications,
+        autoSave: savedAutoSave
       });
     }
   }, [open]);
 
   const handleSave = () => {
-    // Sauvegarder les paramètres (sauf la clé API qui est fixe)
+    // Sauvegarder les paramètres
     localStorage.setItem("darkMode", settings.darkMode.toString());
     localStorage.setItem("language", settings.language);
+    localStorage.setItem("geminiApiKey", settings.apiKey);
+    localStorage.setItem("notifications", settings.notifications.toString());
+    localStorage.setItem("autoSave", settings.autoSave.toString());
     
     // Appliquer le dark mode si nécessaire
     if (settings.darkMode) {
@@ -74,7 +87,7 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsList className="grid grid-cols-2 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="general" className="flex items-center gap-1">
               <SunMedium className="h-4 w-4" />
               <span>Général</span>
@@ -82,6 +95,10 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
             <TabsTrigger value="api" className="flex items-center gap-1">
               <Key className="h-4 w-4" />
               <span>API</span>
+            </TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-1">
+              <UserCircle className="h-4 w-4" />
+              <span>Compte</span>
             </TabsTrigger>
           </TabsList>
           
@@ -95,6 +112,30 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
                 id="darkMode" 
                 checked={settings.darkMode}
                 onCheckedChange={(checked) => setSettings({...settings, darkMode: checked})}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="autoSave" className="font-medium">Sauvegarde automatique</Label>
+                <p className="text-sm text-muted-foreground">Enregistrer automatiquement les notes en cours d'édition</p>
+              </div>
+              <Switch 
+                id="autoSave" 
+                checked={settings.autoSave}
+                onCheckedChange={(checked) => setSettings({...settings, autoSave: checked})}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="notifications" className="font-medium">Notifications</Label>
+                <p className="text-sm text-muted-foreground">Activer les notifications de l'application</p>
+              </div>
+              <Switch 
+                id="notifications" 
+                checked={settings.notifications}
+                onCheckedChange={(checked) => setSettings({...settings, notifications: checked})}
               />
             </div>
             
@@ -130,17 +171,54 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
           <TabsContent value="api" className="space-y-6 py-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="font-medium">Clé API Groq</Label>
+                <Label className="font-medium">Clé API Gemini</Label>
               </div>
               <p className="text-sm text-muted-foreground">
-                La clé API Groq est configurée avec le modèle Llama 3.
+                Saisissez votre clé API Gemini pour utiliser les fonctionnalités d'intelligence artificielle
               </p>
-              <div className="p-3 bg-muted rounded-md text-sm font-mono overflow-x-auto">
-                {settings.apiKey.substring(0, 12)}...{settings.apiKey.substring(settings.apiKey.length - 4)}
-              </div>
+              <Input 
+                type="password" 
+                value={settings.apiKey} 
+                onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
+                placeholder="AIza..."
+                className="font-mono text-sm"
+              />
               <p className="text-xs text-muted-foreground mt-2">
                 Cette clé est utilisée pour les fonctionnalités d'analyse IA et de transcription vocale.
               </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="account" className="space-y-6 py-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <Label className="font-medium">Informations du compte</Label>
+              </div>
+              
+              {user ? (
+                <>
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm font-medium">Email</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    
+                    {user.user_metadata?.name && (
+                      <>
+                        <p className="text-sm font-medium mt-2">Nom</p>
+                        <p className="text-sm text-muted-foreground">{user.user_metadata.name}</p>
+                      </>
+                    )}
+                    
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Compte créé le {new Date(user.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Connectez-vous pour voir les informations de votre compte.
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>

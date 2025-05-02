@@ -29,6 +29,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log("Auth state changed:", event);
         setUser(session?.user ?? null);
         setIsLoading(false);
+        
+        // Mise à jour des notes de l'utilisateur lors d'un changement de session
+        if (event === 'SIGNED_IN') {
+          toast.success("Connecté avec succès");
+        } else if (event === 'SIGNED_OUT') {
+          toast.info("Vous avez été déconnecté");
+        }
       }
     );
 

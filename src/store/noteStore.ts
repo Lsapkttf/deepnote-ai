@@ -40,9 +40,19 @@ const useNoteStore = create<NoteState>((set, get) => ({
     set({ isLoading: true });
     try {
       console.log("Chargement des notes...");
+      
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        console.log("Aucun utilisateur connecté");
+        set({ notes: [], isLoading: false });
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('notes')
         .select('*')
+        .eq('user_id', userData.user.id)
         .eq('archived', false)
         .order('created_at', { ascending: false });
       
@@ -81,9 +91,19 @@ const useNoteStore = create<NoteState>((set, get) => ({
     set({ isLoading: true });
     try {
       console.log("Chargement des notes archivées...");
+      
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        console.log("Aucun utilisateur connecté");
+        set({ notes: [], isLoading: false });
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('notes')
         .select('*')
+        .eq('user_id', userData.user.id)
         .eq('archived', true)
         .order('created_at', { ascending: false });
       
@@ -122,13 +142,21 @@ const useNoteStore = create<NoteState>((set, get) => ({
     try {
       console.log("Création d'une nouvelle note:", { title, type, color });
       
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        toast.error("Vous devez être connecté pour créer une note");
+        throw new Error("Non authentifié");
+      }
+      
       const newNoteData = {
         title,
         content,
         type,
         color,
         pinned: false,
-        archived: false
+        archived: false,
+        user_id: userData.user.id
       };
       
       const { data, error } = await supabase
@@ -181,6 +209,31 @@ const useNoteStore = create<NoteState>((set, get) => ({
     try {
       console.log("Mise à jour de la note:", id, updates);
       
+      // Get current user to verify ownership
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        toast.error("Vous devez être connecté pour modifier une note");
+        throw new Error("Non authentifié");
+      }
+      
+      // Verify ownership before updating
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+      
+      if (noteError || !noteData) {
+        toast.error("Note introuvable");
+        console.error("Erreur lors de la vérification de la note:", noteError);
+        return;
+      }
+      
+      if (noteData.user_id !== userData.user.id) {
+        toast.error("Vous n'êtes pas autorisé à modifier cette note");
+        return;
+      }
+      
       // Conversion du format des données pour Supabase
       const supabaseUpdates: any = { ...updates };
       
@@ -230,6 +283,31 @@ const useNoteStore = create<NoteState>((set, get) => ({
     try {
       console.log("Suppression de la note:", id);
       
+      // Get current user to verify ownership
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        toast.error("Vous devez être connecté pour supprimer une note");
+        throw new Error("Non authentifié");
+      }
+      
+      // Verify ownership before deleting
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+      
+      if (noteError || !noteData) {
+        toast.error("Note introuvable");
+        console.error("Erreur lors de la vérification de la note:", noteError);
+        return;
+      }
+      
+      if (noteData.user_id !== userData.user.id) {
+        toast.error("Vous n'êtes pas autorisé à supprimer cette note");
+        return;
+      }
+      
       const { error } = await supabase
         .from('notes')
         .delete()
@@ -267,6 +345,31 @@ const useNoteStore = create<NoteState>((set, get) => ({
     try {
       console.log(`${note.pinned ? "Désépinglage" : "Épinglage"} de la note:`, id);
       
+      // Get current user to verify ownership
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        toast.error("Vous devez être connecté pour modifier une note");
+        throw new Error("Non authentifié");
+      }
+      
+      // Verify ownership before updating
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+      
+      if (noteError || !noteData) {
+        toast.error("Note introuvable");
+        console.error("Erreur lors de la vérification de la note:", noteError);
+        return;
+      }
+      
+      if (noteData.user_id !== userData.user.id) {
+        toast.error("Vous n'êtes pas autorisé à modifier cette note");
+        return;
+      }
+      
       const { error } = await supabase
         .from('notes')
         .update({ pinned: !note.pinned })
@@ -299,6 +402,31 @@ const useNoteStore = create<NoteState>((set, get) => ({
   archiveNote: async (id) => {
     try {
       console.log("Archivage de la note:", id);
+      
+      // Get current user to verify ownership
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        toast.error("Vous devez être connecté pour archiver une note");
+        throw new Error("Non authentifié");
+      }
+      
+      // Verify ownership before updating
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+      
+      if (noteError || !noteData) {
+        toast.error("Note introuvable");
+        console.error("Erreur lors de la vérification de la note:", noteError);
+        return;
+      }
+      
+      if (noteData.user_id !== userData.user.id) {
+        toast.error("Vous n'êtes pas autorisé à archiver cette note");
+        return;
+      }
       
       const { error } = await supabase
         .from('notes')

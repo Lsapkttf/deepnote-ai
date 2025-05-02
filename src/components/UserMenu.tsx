@@ -35,44 +35,56 @@ const UserMenu = () => {
     : user.email?.[0].toUpperCase() || "U";
   
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.name || user.email || "User"} />
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <div className="flex flex-col space-y-1 p-2">
-          <p className="font-medium leading-none">{user.user_metadata?.name || "Utilisateur"}</p>
-          <p className="text-xs leading-none text-muted-foreground">
-            {user.email}
-          </p>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onClick={() => navigate("/profile")}
-        >
-          <User className="mr-2 h-4 w-4" />
-          <span>Profil</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onClick={() => navigate("/settings")}
-        >
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Paramètres</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Se déconnecter</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center gap-2">
+      <Button 
+        variant="destructive" 
+        size="sm" 
+        onClick={handleSignOut}
+        className="hidden md:flex"
+      >
+        <LogOut className="h-4 w-4 mr-2" />
+        Se déconnecter
+      </Button>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.name || user.email || "User"} />
+              <AvatarFallback>{userInitials}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <div className="flex flex-col space-y-1 p-2">
+            <p className="font-medium leading-none">{user.user_metadata?.name || "Utilisateur"}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email}
+            </p>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => navigate("/profile")}
+          >
+            <User className="mr-2 h-4 w-4" />
+            <span>Profil</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => navigate("/settings")}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Paramètres</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={handleSignOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Se déconnecter</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 };
 
