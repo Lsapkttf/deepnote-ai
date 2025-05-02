@@ -48,22 +48,6 @@
   "lang": "fr-FR",
   "categories": ["productivity", "utilities"],
   "prefer_related_applications": false,
-  "screenshots": [
-    {
-      "src": "/screenshots/screen1.png",
-      "sizes": "1280x720",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/screen2.png",
-      "sizes": "1280x720",
-      "type": "image/png" 
-    }
-  ],
-  "related_applications": [],
-  "capture_links": "existing_client_event",
-  "scope": "/",
-  "dir": "ltr",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
   "handle_links": "preferred",
   "launch_handler": {

@@ -1,11 +1,12 @@
 
-const CACHE_NAME = 'deepnote-v3';
+const CACHE_NAME = 'deepnote-v4';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  '/favicon.ico',
   '/assets/index.css',
   '/assets/index.js'
 ];
@@ -58,8 +59,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Ne pas intercepter les requêtes vers des API
   if (event.request.url.includes('/api/') || 
-      event.request.url.includes('huggingface.co') || 
-      event.request.url.includes('hf.space')) {
+      event.request.url.includes('googleapis.com') || 
+      event.request.url.includes('openai.com')) {
     return;
   }
   

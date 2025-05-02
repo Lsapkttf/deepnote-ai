@@ -1,6 +1,6 @@
 
-import React, { useRef, useState } from "react";
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Heading3, ListOrdered, List, Image, Link, Type } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Heading3, ListOrdered, List, Image, Link, Type, Trash } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
@@ -18,21 +18,21 @@ const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 36];
 
 // Color options for text and background
 const TEXT_COLORS = [
-  { name: "Noir", value: "text-black dark:text-white" },
-  { name: "Rouge", value: "text-red-500" },
-  { name: "Vert", value: "text-green-500" },
-  { name: "Bleu", value: "text-blue-500" },
-  { name: "Violet", value: "text-purple-500" },
-  { name: "Orange", value: "text-orange-500" },
+  { name: "Noir", value: "text-black dark:text-white", colorClass: "bg-black dark:bg-white" },
+  { name: "Rouge", value: "text-red-500", colorClass: "bg-red-500" },
+  { name: "Vert", value: "text-green-500", colorClass: "bg-green-500" },
+  { name: "Bleu", value: "text-blue-500", colorClass: "bg-blue-500" },
+  { name: "Violet", value: "text-purple-500", colorClass: "bg-purple-500" },
+  { name: "Orange", value: "text-orange-500", colorClass: "bg-orange-500" },
 ];
 
 const BG_COLORS = [
-  { name: "Transparent", value: "bg-transparent" },
-  { name: "Gris clair", value: "bg-gray-100 dark:bg-gray-800" },
-  { name: "Jaune pâle", value: "bg-yellow-100 dark:bg-yellow-900" },
-  { name: "Vert pâle", value: "bg-green-100 dark:bg-green-900" },
-  { name: "Bleu pâle", value: "bg-blue-100 dark:bg-blue-900" },
-  { name: "Rouge pâle", value: "bg-red-100 dark:bg-red-900" },
+  { name: "Transparent", value: "bg-transparent", colorClass: "border border-gray-300 dark:border-gray-700 bg-transparent" },
+  { name: "Gris clair", value: "bg-gray-100 dark:bg-gray-800", colorClass: "bg-gray-100 dark:bg-gray-800" },
+  { name: "Jaune pâle", value: "bg-yellow-100 dark:bg-yellow-900", colorClass: "bg-yellow-100 dark:bg-yellow-900" },
+  { name: "Vert pâle", value: "bg-green-100 dark:bg-green-900", colorClass: "bg-green-100 dark:bg-green-900" },
+  { name: "Bleu pâle", value: "bg-blue-100 dark:bg-blue-900", colorClass: "bg-blue-100 dark:bg-blue-900" },
+  { name: "Rouge pâle", value: "bg-red-100 dark:bg-red-900", colorClass: "bg-red-100 dark:bg-red-900" },
 ];
 
 const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => {
@@ -40,6 +40,13 @@ const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => 
   const [fontSize, setFontSize] = useState<number>(16);
   const [selectedTextColor, setSelectedTextColor] = useState<string>(TEXT_COLORS[0].value);
   const [selectedBgColor, setSelectedBgColor] = useState<string>(BG_COLORS[0].value);
+  
+  // Ensure editor gets correct initial content and cursor position
+  useEffect(() => {
+    if (editorRef.current && !editorRef.current.innerHTML && value) {
+      editorRef.current.innerHTML = value;
+    }
+  }, [value, editorRef.current]);
   
   const execCommand = (command: string, value: string = "") => {
     document.execCommand(command, false, value);
@@ -66,43 +73,59 @@ const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => 
   
   const handleTextColorChange = (color: string) => {
     setSelectedTextColor(color);
-    // Apply color class to selection
     document.execCommand('styleWithCSS', false, 'true');
     
-    // Create a span with the class and wrap the selection
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
       const range = selection.getRangeAt(0);
       const span = document.createElement('span');
       span.className = color;
-      range.surroundContents(span);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      updateContent();
+      
+      try {
+        range.surroundContents(span);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        updateContent();
+      } catch (e) {
+        console.error("Couldn't apply text color", e);
+        // Fallback for complex selections
+        document.execCommand('foreColor', false, getComputedStyle(document.createElement(`span`)).color);
+      }
     }
   };
   
   const handleBgColorChange = (color: string) => {
     setSelectedBgColor(color);
-    // Apply background color class to selection
     document.execCommand('styleWithCSS', false, 'true');
     
-    // Create a span with the class and wrap the selection
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
       const range = selection.getRangeAt(0);
       const span = document.createElement('span');
       span.className = color;
-      range.surroundContents(span);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      updateContent();
+      
+      try {
+        range.surroundContents(span);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        updateContent();
+      } catch (e) {
+        console.error("Couldn't apply background color", e);
+        // Fallback for complex selections
+        document.execCommand('hiliteColor', false, getComputedStyle(document.createElement(`span`)).backgroundColor);
+      }
     }
+  };
+
+  const clearFormatting = () => {
+    document.execCommand('removeFormat', false);
+    updateContent();
+    editorRef.current?.focus();
   };
 
   return (
     <div className={cn("flex flex-col border rounded-lg overflow-hidden", className)}>
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30">
+      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30 overflow-x-auto">
         <ToggleGroup type="multiple" className="flex flex-wrap">
           <ToggleGroupItem value="bold" aria-label="Gras" title="Gras" onClick={() => execCommand('bold')}>
             <Bold className="h-4 w-4" />
@@ -186,7 +209,8 @@ const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => 
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 flex items-center">
-              <div className="h-4 w-4 rounded-full border border-border bg-primary" />
+              <div className={cn("h-4 w-4 rounded-full border border-border", 
+                TEXT_COLORS.find(c => c.value === selectedTextColor)?.colorClass || "bg-black dark:bg-white")} />
               <span className="text-xs">Couleur</span>
             </Button>
           </PopoverTrigger>
@@ -216,7 +240,8 @@ const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => 
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 flex items-center">
-              <div className="h-4 w-4 rounded-full border border-border bg-note-yellow" />
+              <div className={cn("h-4 w-4 rounded-full border border-border", 
+                BG_COLORS.find(c => c.value === selectedBgColor)?.colorClass || "bg-transparent")} />
               <span className="text-xs">Fond</span>
             </Button>
           </PopoverTrigger>
@@ -241,11 +266,22 @@ const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => 
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Clear formatting button */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 px-2 ml-auto"
+          onClick={clearFormatting}
+          title="Effacer le formatage"
+        >
+          <Trash className="h-4 w-4" />
+        </Button>
       </div>
       
       <div
         ref={editorRef}
-        className="flex-1 p-3 focus:outline-none min-h-[200px] max-h-[600px] overflow-auto"
+        className="flex-1 p-3 focus:outline-none min-h-[200px] max-h-[600px] overflow-auto text-black dark:text-white"
         contentEditable
         dangerouslySetInnerHTML={{ __html: value }}
         onInput={updateContent}

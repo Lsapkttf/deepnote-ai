@@ -2,8 +2,8 @@
 import { AIAnalysis } from '../types/note';
 import { toast } from "sonner";
 
-// Clé API Groq fixe fournie par l'utilisateur
-const API_KEY = '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';
+// Clé API Gemini fournie par l'utilisateur
+const API_KEY = 'AIzaSyAdOinCnHfqjOyk6XBbTzQkR_IOdRvlliU';
 
 // Stockage en mémoire des conversations pour chaque note
 interface ConversationMemory {
@@ -17,14 +17,14 @@ interface ConversationMemory {
 // Initialiser la mémoire de conversation
 const conversationMemory: ConversationMemory = {};
 
-// Fonction pour analyser le texte avec Groq (Llama 3)
+// Fonction pour analyser le texte avec Gemini
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   try {
     if (!text || text.trim().length === 0) {
       throw new Error("Aucun texte à analyser");
     }
 
-    console.log("Démarrage de l'analyse avec Groq...");
+    console.log("Démarrage de l'analyse avec Gemini...");
     
     const prompt = `Voici une note: "${text.substring(0, 4000)}${text.length > 4000 ? '...' : ''}"
 
@@ -48,42 +48,40 @@ Sentiment:
 [positif/négatif/neutre]`;
 
     const response = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + API_KEY,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
-          messages: [
-            {
-              role: "system",
-              content: "Tu es un assistant spécialisé dans l'analyse de texte en français."
-            },
+          contents: [
             {
               role: "user",
-              content: prompt
+              parts: [
+                { text: prompt }
+              ]
             }
           ],
-          temperature: 0.5,
-          max_tokens: 500,
+          generationConfig: {
+            temperature: 0.5,
+            maxOutputTokens: 500,
+          }
         }),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Erreur API Groq:", errorText);
+      console.error("Erreur API Gemini:", errorText);
       throw new Error(`Erreur de connexion: ${response.status}`);
     }
 
     const result = await response.json();
     console.log("Réponse brute:", result);
     
-    if (result.choices && result.choices.length > 0 && result.choices[0].message) {
-      const generatedText = result.choices[0].message.content;
+    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
+      const generatedText = result.candidates[0].content.parts[0].text;
       console.log("Texte généré:", generatedText);
       
       // Extraction des parties du texte
@@ -119,7 +117,7 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
       throw new Error("Message vide");
     }
 
-    console.log("Envoi au chat IA via Groq:", message);
+    console.log("Envoi au chat IA via Gemini:", message);
     
     // Limiter la taille du contenu de la note pour éviter les dépassements
     const trimmedContent = noteContent.length > 3000 
@@ -133,28 +131,6 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
       systemPrompt = "Tu es DeepNote Assistant, un assistant IA conçu pour aider les utilisateurs à gérer leurs notes et leurs idées. Tu es serviable, précis et concis. Tu peux aider à créer du contenu pour des notes, suggérer des idées d'organisation, et répondre à diverses questions. Réponds toujours en français.";
     }
     
-    // Construire les messages avec historique si disponible
-    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-      {
-        role: "system",
-        content: systemPrompt
-      }
-    ];
-    
-    // Ajouter l'historique de conversation si disponible pour cette note
-    if (noteId && conversationMemory[noteId]) {
-      const history = conversationMemory[noteId];
-      // Limiter l'historique aux 10 derniers échanges pour éviter les dépassements de tokens
-      const recentHistory = history.slice(-10);
-      
-      recentHistory.forEach(msg => {
-        messages.push({
-          role: msg.role as 'user' | 'assistant', // Conversion explicite du type
-          content: msg.content
-        });
-      });
-    }
-    
     // Construire le contenu du message en fonction du contexte
     let userMessageContent = message;
     
@@ -165,40 +141,63 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
 Question: ${message}`;
     }
     
-    // Ajouter le message actuel
-    messages.push({
-      role: "user", 
-      content: userMessageContent
+    // Construire les messages pour l'API Gemini
+    const contents = [];
+    
+    // Ajouter le message système
+    contents.push({
+      role: "model",
+      parts: [{ text: systemPrompt }]
+    });
+    
+    // Ajouter l'historique de conversation si disponible pour cette note
+    if (noteId && conversationMemory[noteId]) {
+      const history = conversationMemory[noteId];
+      // Limiter l'historique aux 10 derniers échanges pour éviter les dépassements de tokens
+      const recentHistory = history.slice(-10);
+      
+      recentHistory.forEach(msg => {
+        contents.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        });
+      });
+    }
+    
+    // Ajouter le message actuel de l'utilisateur
+    contents.push({
+      role: "user",
+      parts: [{ text: userMessageContent }]
     });
     
     const response = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + API_KEY,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 500,
+          contents: contents,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 500,
+          }
         }),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Erreur API Groq chat:", errorText);
+      console.error("Erreur API Gemini chat:", errorText);
       throw new Error(`Erreur de connexion: ${response.status}`);
     }
 
     const result = await response.json();
     console.log("Réponse brute du chat:", result);
     
-    if (result.choices && result.choices.length > 0 && result.choices[0].message) {
-      const generatedText = result.choices[0].message.content;
+    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
+      const generatedText = result.candidates[0].content.parts[0].text;
       console.log("Réponse générée:", generatedText);
       
       // Sauvegarder dans l'historique de conversation si noteId est fourni
@@ -242,7 +241,7 @@ export const getChatHistory = (noteId: string) => {
   return conversationMemory[noteId] || [];
 };
 
-// Fonction pour la transcription audio
+// Fonction pour la transcription audio (toujours via Whisper car Gemini n'a pas d'API de transcription équivalente)
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   try {
     console.log("Début de la transcription audio...");
@@ -252,6 +251,8 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     formData.append('file', audioBlob, 'audio.wav');
     formData.append('model', 'whisper-1');
     
+    // Pour la transcription, nous continuons d'utiliser l'API Whisper d'OpenAI
+    // puisque Gemini n'a pas d'équivalent direct pour la transcription audio
     const response = await fetch(
       'https://api.openai.com/v1/audio/transcriptions',
       {
@@ -353,8 +354,8 @@ function extractSentiment(text: string): string {
 
 // Pour compatibilité avec le code existant
 export const setHuggingFaceApiKey = (key: string) => {
-  console.log("Note: La clé API est maintenant fixe (Groq)");
-  localStorage.setItem('groq_api_key', API_KEY);
+  console.log("Note: La clé API est maintenant fixe (Gemini)");
+  localStorage.setItem('gemini_api_key', API_KEY);
 };
 
 export const getHuggingFaceApiKey = (): string => {

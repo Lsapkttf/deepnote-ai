@@ -1,9 +1,25 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Plus,
+  Mic,
+  Search,
+  Settings,
+  Menu,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Search, Menu, X, Settings } from "lucide-react";
-import Logo from "@/components/Logo";
-import ThemeToggle from "@/components/ThemeToggle";
+import { Input } from "@/components/ui/input";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import ThemeToggle from "./ThemeToggle";
+import UserMenu from "./UserMenu";
 
 interface MobileNavProps {
   onOpenSidebar: () => void;
@@ -11,85 +27,82 @@ interface MobileNavProps {
   onNewVoiceNote: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onOpenSettings?: () => void;
+  onOpenSettings: () => void;
 }
 
-const MobileNav = ({ 
-  onOpenSidebar, 
-  onNewTextNote, 
+const MobileNav = ({
+  onOpenSidebar,
+  onNewTextNote,
   onNewVoiceNote,
   searchQuery,
   onSearchChange,
-  onOpenSettings
+  onOpenSettings,
 }: MobileNavProps) => {
-  const [showSearch, setShowSearch] = useState(false);
-  
+  const isMobile = useIsMobile();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  if (!isMobile) return null;
+
   return (
-    <>
-      <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b flex items-center h-16 px-4">
-        {showSearch ? (
-          <div className="relative w-full flex items-center">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-9 w-9 mr-2 shrink-0" 
-              onClick={() => {
-                setShowSearch(false);
-                onSearchChange("");
-              }}
-            >
-              <X className="h-5 w-5" />
+    <div className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm border-b">
+      <div className="container flex items-center gap-2 py-2">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" className="pl-0">
+              <Menu className="h-5 w-5" />
             </Button>
-            <input
-              type="text"
-              placeholder="Rechercher dans les notes..."
-              className="flex-1 h-10 bg-background/90 border rounded-full px-4 focus:outline-none focus:ring-1 focus:ring-primary"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              autoFocus
-            />
-          </div>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64">
+            <SheetHeader className="pl-6 pr-8">
+              <SheetTitle>DeepNote</SheetTitle>
+              <SheetDescription>
+                Accédez rapidement à vos notes et paramètres.
+              </SheetDescription>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>
+
+        {isSearchOpen ? (
+          <Input
+            placeholder="Rechercher..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="flex-1"
+            autoFocus
+            onBlur={() => setIsSearchOpen(false)}
+          />
         ) : (
-          <>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-9 w-9 shrink-0" 
-                onClick={onOpenSidebar}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              <Logo />
-            </div>
-            
-            <div className="flex items-center gap-1 ml-auto">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-9 w-9" 
-                onClick={() => setShowSearch(true)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-              <ThemeToggle />
-              {onOpenSettings && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9" 
-                  onClick={onOpenSettings}
-                >
-                  <Settings className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-          </>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 justify-start"
+            onClick={() => setIsSearchOpen(true)}
+          >
+            <Search className="mr-2 h-4 w-4" />
+            Rechercher dans les notes...
+          </Button>
         )}
+
+        <Button variant="ghost" size="sm" onClick={onNewTextNote}>
+          <Plus className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onNewVoiceNote}>
+          <Mic className="h-5 w-5" />
+        </Button>
+
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <UserMenu />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onOpenSettings}
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
-      
-      {/* Les boutons flottants ont été supprimés comme demandé */}
-    </>
+    </div>
   );
 };
 
