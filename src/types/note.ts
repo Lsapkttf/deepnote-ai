@@ -34,4 +34,6 @@ export interface AppSettings {
   apiKey: string;
   darkMode: boolean;
   language: 'fr' | 'en';
+  notifications: boolean;
+  autoSave: boolean;
 }
