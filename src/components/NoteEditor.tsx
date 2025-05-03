@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import RichTextEditor from './RichTextEditor';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,16 @@ const colorOptions: { value: NoteColor; label: string; bg: string }[] = [
   { value: 'yellow', label: 'Défaut', bg: 'bg-note-yellow/0 dark:bg-transparent border' },
   { value: 'red', label: 'Rouge', bg: 'bg-note-red dark:bg-red-950' },
   { value: 'yellow', label: 'Jaune', bg: 'bg-note-yellow dark:bg-yellow-950' },
+  { value: 'green', label: 'Vert', bg: 'bg-note-green dark:bg-green-950' },
+  { value: 'blue', label: 'Bleu', bg: 'bg-note-blue dark:bg-blue-950' },
+  { value: 'purple', label: 'Violet', bg: 'bg-note-purple dark:bg-purple-950' },
+  { value: 'orange', label: 'Orange', bg: 'bg-note-orange dark:bg-orange-950' }
+];
+
+// Correction du problème de couleurs (il y avait deux "yellow")
+const fixedColorOptions: { value: NoteColor; label: string; bg: string }[] = [
+  { value: 'yellow', label: 'Défaut', bg: 'bg-note-yellow/0 dark:bg-transparent border' },
+  { value: 'red', label: 'Rouge', bg: 'bg-note-red dark:bg-red-950' },
   { value: 'green', label: 'Vert', bg: 'bg-note-green dark:bg-green-950' },
   { value: 'blue', label: 'Bleu', bg: 'bg-note-blue dark:bg-blue-950' },
   { value: 'purple', label: 'Violet', bg: 'bg-note-purple dark:bg-purple-950' },
@@ -193,7 +204,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         <div className="p-4 border-b bg-background/70 backdrop-blur-sm">
           <h3 className="font-medium mb-3">Couleur</h3>
           <div className="flex flex-wrap gap-2">
-            {colorOptions.map((option) => (
+            {fixedColorOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => {

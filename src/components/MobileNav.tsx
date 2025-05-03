@@ -110,8 +110,20 @@ const MobileNav = ({
           )}
         </div>
 
-        <div className="flex items-center">
-          {!isSearchOpen && <UserMenu />}
+        <div className="flex items-center gap-1">
+          {!isSearchOpen && (
+            <>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onOpenSettings} 
+                className="rounded-full"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+              <UserMenu />
+            </>
+          )}
         </div>
       </div>
     </div>

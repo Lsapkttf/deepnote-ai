@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
@@ -62,12 +63,13 @@ const Index = () => {
   } = useNoteStore();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [view, setView] = useState<"list" | "editor" | "recorder" | "transcription" | "chat">("list");
+  const [view, setView] = useState<"list" | "editor" | "recorder" | "transcription" | "chat" | "image" | "checklist">("list");
   const [selectedCategory, setSelectedCategory] = useState("notes");
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const isMobile = useIsMobile();
+  const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const hasApiKey = checkApiKey();
@@ -89,7 +91,21 @@ const Index = () => {
     }
   }, [fetchNotes, fetchArchivedNotes, selectedCategory]);
 
-  const toggleSidebar = () => {
+  // Fermer la sidebar lorsqu'on clique à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Si la sidebar est ouverte et le clic est à l'extérieur de la sidebar
+      if (sidebarOpen && mainRef.current && !event.composedPath().includes(document.querySelector('.sidebar') as EventTarget)) {
+        setSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [sidebarOpen]);
+
+  const toggleSidebar = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setSidebarOpen(!sidebarOpen);
   };
 
@@ -181,6 +197,53 @@ const Index = () => {
     }
   };
 
+  // Fonction pour gérer l'ajout d'une image
+  const handleAddImage = () => {
+    // Temporairement pour l'exemple
+    toast.info("Fonctionnalité d'ajout d'image en développement");
+    // Puis on pourrait rediriger vers l'éditeur avec un mode spécifique
+    if (currentNote) {
+      setView("editor");
+    } else {
+      const createNewImageNote = async () => {
+        const newNote = await addNote(
+          "Note avec image",
+          "<p>Insérez une image ici...</p>",
+          "image",
+          "blue"
+        );
+        setCurrentNote(newNote);
+        setView("editor");
+      };
+      createNewImageNote();
+    }
+  };
+
+  // Fonction pour créer une liste de tâches
+  const handleCreateChecklist = () => {
+    const checklistTemplate = `
+      <h2>Liste de tâches</h2>
+      <ul>
+        <li><input type="checkbox"> Tâche 1</li>
+        <li><input type="checkbox"> Tâche 2</li>
+        <li><input type="checkbox"> Tâche 3</li>
+      </ul>
+    `;
+    
+    const createNewChecklist = async () => {
+      const newNote = await addNote(
+        "Liste de tâches",
+        checklistTemplate,
+        "text",
+        "green"
+      );
+      setCurrentNote(newNote);
+      setView("editor");
+    };
+    
+    createNewChecklist();
+  };
+
   const filteredNotes = notes.filter(note => {
     if (selectedCategory === "notes" && note.archived) return false;
     if (selectedCategory === "recent") {
@@ -264,8 +327,32 @@ const Index = () => {
 
       <div className="flex items-center gap-2">
         <ThemeToggle />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:inline-flex h-9 w-9"
+          onClick={() => setSettingsDialogOpen(true)}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+        <UserMenuButton />
       </div>
     </div>
+  );
+
+  // Composant pour le bouton du menu utilisateur
+  const UserMenuButton = () => (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-9 w-9"
+      onClick={() => {
+        toast.info("Déconnexion");
+        // Ajouter ici la logique de déconnexion
+      }}
+    >
+      <LogOut className="h-5 w-5" />
+    </Button>
   );
 
   const handleNewTranscription = () => {
@@ -303,11 +390,11 @@ const Index = () => {
     if (view !== "editor" || !isMobile) return null;
 
     const actions = [
-      { icon: <Mic className="h-5 w-5" />, label: "Audio", onClick: () => null },
-      { icon: <ImageIcon className="h-5 w-5" />, label: "Image", onClick: () => null },
-      { icon: <Pencil className="h-5 w-5" />, label: "Dessin", onClick: () => null },
-      { icon: <CheckSquare className="h-5 w-5" />, label: "Liste", onClick: () => null },
-      { icon: <Text className="h-5 w-5" />, label: "Texte", onClick: () => null },
+      { icon: <Mic className="h-5 w-5" />, label: "Audio", onClick: () => handleNewVoiceNote() },
+      { icon: <ImageIcon className="h-5 w-5" />, label: "Image", onClick: () => handleAddImage() },
+      { icon: <Text className="h-5 w-5" />, label: "Texte", onClick: () => handleNewTextNote() },
+      { icon: <CheckSquare className="h-5 w-5" />, label: "Liste", onClick: () => handleCreateChecklist() },
+      { icon: <Pencil className="h-5 w-5" />, label: "Dessin", onClick: () => toast.info("Fonctionnalité de dessin en développement") },
     ];
 
     return (
@@ -383,7 +470,7 @@ const Index = () => {
           onOpenSettings={() => setSettingsDialogOpen(true)}
         />
         
-        <main className={`flex-1 overflow-hidden ${isMobile ? 'pt-0' : ''} md:ml-72`}>
+        <main ref={mainRef} className={`flex-1 overflow-hidden ${isMobile ? 'pt-0' : ''} md:ml-72`}>
           {view === "list" && (
             <div className="p-4 h-full flex flex-col overflow-hidden">
               <div className="md:hidden mb-4">
@@ -565,5 +652,43 @@ const Index = () => {
     </div>
   );
 };
+
+// Ajout du composant Settings et LogOut pour le menu mobile
+const Settings = (props: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const LogOut = (props: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
+  </svg>
+);
 
 export default Index;

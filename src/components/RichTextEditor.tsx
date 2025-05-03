@@ -38,7 +38,7 @@ const BG_COLORS = [
   { name: "Rouge pâle", value: "bg-red-100 dark:bg-red-900", colorClass: "bg-red-100 dark:bg-red-900" },
 ];
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ 
+const RichTextEditor = ({ 
   value, 
   onChange, 
   className, 
@@ -72,7 +72,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (editorRef.current && editorRef.current.innerHTML !== value) {
       editorRef.current.innerHTML = value;
     }
-  }, [value, editorRef.current]);
+  }, [value]);
   
   const execCommand = (command: string, value: string = "") => {
     document.execCommand(command, false, value);

@@ -80,6 +80,11 @@
     color: hsl(var(--foreground));
   }
   
+  /* S'assurer que les notes ont un texte visible en mode sombre */
+  .dark .note-card-content {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
   /* Styles pour les couleurs des notes */
   .bg-note-yellow {
     background-color: hsl(var(--note-yellow));
@@ -192,4 +197,18 @@ html {
 
 .chip-outline {
   @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+}
+
+/* Mode sombre: surcharges pour meilleure visibilité */
+.dark .note-list-item {
+  @apply bg-opacity-80 text-white;
+}
+
+.dark .note-title {
+  @apply text-white font-semibold;
+}
+
+/* Fix pour l'éditeur riche en mode sombre */
+.dark [contenteditable] {
+  color: rgba(255, 255, 255, 0.9);
 }

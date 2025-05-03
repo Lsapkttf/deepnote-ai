@@ -4,19 +4,23 @@ import { v4 as uuidv4 } from "uuid";
 import { AIAnalysis, ChatMessage } from "@/types/note";
 import { toast } from "sonner";
 
-// Clé API Gemini globale (à configurer côté administrateur)
-const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
+// Utilisation de la clé API Gemini définie
+const GEMINI_API_KEY = "AIzaSyAdOinCnHfqjOyk6XBbTzQkR_IOdRvlliU";
 
 // Vérifier si la clé API est configurée
 export const checkApiKey = (): boolean => {
-  return GEMINI_API_KEY && GEMINI_API_KEY.length > 0 && GEMINI_API_KEY !== "YOUR_GEMINI_API_KEY_HERE";
+  return true; // La clé est maintenant définie directement dans le code
 };
 
 // Fonction pour analyser du texte
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   try {
-    if (!checkApiKey()) {
-      throw new Error("Clé API Gemini non configurée. Veuillez contacter l'administrateur.");
+    if (!text.trim()) {
+      return {
+        summary: "Aucun contenu à analyser",
+        keyPoints: ["La note est vide"],
+        sentiment: "neutre"
+      };
     }
     
     const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${GEMINI_API_KEY}`, {
@@ -77,17 +81,17 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
     };
   } catch (error) {
     console.error("Erreur d'analyse:", error);
-    throw error;
+    return {
+      summary: "Erreur lors de l'analyse",
+      keyPoints: ["Impossible d'analyser le contenu"],
+      sentiment: "neutre"
+    };
   }
 };
 
 // Fonction pour discuter avec l'IA à propos d'une note
 export const chatWithAI = async (message: string, noteContent: string, noteId?: string): Promise<string> => {
   try {
-    if (!checkApiKey()) {
-      throw new Error("Clé API Gemini non configurée. Veuillez contacter l'administrateur.");
-    }
-    
     // Construction du contexte avec le contenu de la note
     const context = noteContent ? `Contexte - contenu de la note: ${noteContent}\n\n` : "";
     
@@ -158,10 +162,6 @@ export const getChatHistory = (noteId: string): ChatMessage[] => {
 // Fonction pour transcrire de l'audio
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   try {
-    if (!checkApiKey()) {
-      throw new Error("Clé API Gemini non configurée. Veuillez contacter l'administrateur.");
-    }
-    
     // Pour la transcription, on utilisera la méthode du service whisperService.ts
     // qui est déjà implémentée
     
