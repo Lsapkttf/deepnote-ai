@@ -22,14 +22,18 @@ const queryClient = new QueryClient({
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       staleTime: 5 * 60 * 1000, // 5 minutes
       refetchOnWindowFocus: false,
-      onError: (error) => {
-        console.error("Query error:", error);
+      meta: {
+        onError: (error: unknown) => {
+          console.error("Query error:", error);
+        }
       }
     },
     mutations: {
       retry: 1,
-      onError: (error) => {
-        console.error("Mutation error:", error);
+      meta: {
+        onError: (error: unknown) => {
+          console.error("Mutation error:", error);
+        }
       }
     }
   }
