@@ -6,7 +6,7 @@ import RealTimeTranscription from "@/components/RealTimeTranscription";
 import AIChat from "@/components/AIChat";
 import SettingsDialog from "@/components/SettingsDialog";
 import MobileNav from "@/components/MobileNav";
-import { Note, AIAnalysis } from "@/types/note";
+import { Note, NoteColor, AIAnalysis } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
 import { Plus, Mic } from "lucide-react";
 import { checkApiKey } from "@/services/aiService";
@@ -107,7 +107,7 @@ const Index = () => {
     setSelectedCategory(category);
   };
 
-  const handleSaveNote = async (title: string, content: string, color: string) => {
+  const handleSaveNote = async (title: string, content: string, color: NoteColor) => {
     try {
       await addNote(title || "Sans titre", content, "text", color);
       setView("list");
@@ -191,7 +191,7 @@ const Index = () => {
           "Note avec image",
           "<p>Insérez une image ici...</p>",
           "image",
-          "blue"
+          "yellow" as NoteColor
         );
         setCurrentNote(newNote);
         setView("editor");
@@ -216,7 +216,7 @@ const Index = () => {
         "Liste de tâches",
         checklistTemplate,
         "text",
-        "green"
+        "green" as NoteColor
       );
       setCurrentNote(newNote);
       setView("editor");

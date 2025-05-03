@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 interface MobileActionButtonsProps {
   view: string;
-  setView: (view: string) => void;
+  setView: React.Dispatch<React.SetStateAction<"list" | "editor" | "recorder" | "transcription" | "chat" | "image" | "checklist">>;
   handleNewTextNote: () => void;
 }
 

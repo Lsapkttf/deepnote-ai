@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 interface MobileFloatingMenuProps {
-  view: string;
+  view: "list" | "editor" | "recorder" | "transcription" | "chat" | "image" | "checklist";
   isMobile: boolean;
   handleNewVoiceNote: () => void;
   handleAddImage: () => void;

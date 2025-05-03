@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 interface AppBarProps {
   toggleSidebar: (e?: React.MouseEvent) => void;
   handleBackToList: () => void;
-  view: string;
+  view: "list" | "editor" | "recorder" | "transcription" | "chat" | "image" | "checklist";
   setSettingsDialogOpen: (open: boolean) => void;
   isMobile: boolean;
   searchQuery?: string;
