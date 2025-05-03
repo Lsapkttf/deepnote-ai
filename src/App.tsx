@@ -12,8 +12,28 @@ import Subscription from "./pages/Subscription";
 import AIAssistant from "./components/AIAssistant";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+// Configuration du QueryClient avec gestion des erreurs
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+      onError: (error) => {
+        console.error("Query error:", error);
+      }
+    },
+    mutations: {
+      retry: 1,
+      onError: (error) => {
+        console.error("Mutation error:", error);
+      }
+    }
+  }
+});
 
 // Location-aware component to conditionally render AIAssistant
 const AIAssistantWrapper = () => {
@@ -54,25 +74,41 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/subscription" element={<Subscription />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <AIAssistantWrapper />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner position="top-right" />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={
+                    <ErrorBoundary fallback={
+                      <div className="flex flex-col items-center justify-center h-screen">
+                        <h1 className="text-xl mb-4">Impossible de charger la page principale</h1>
+                        <button 
+                          onClick={() => window.location.reload()}
+                          className="bg-primary text-white px-4 py-2 rounded-md"
+                        >
+                          Réessayer
+                        </button>
+                      </div>
+                    }>
+                      <Index />
+                    </ErrorBoundary>
+                  } />
+                  <Route path="/subscription" element={<Subscription />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <AIAssistantWrapper />
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

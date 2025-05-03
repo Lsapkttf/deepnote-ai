@@ -4,7 +4,7 @@ import { Mic, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MobileActionButtonsProps {
-  view: string;
+  view: "list" | "editor" | "recorder" | "transcription" | "chat" | "image" | "checklist";
   setView: React.Dispatch<React.SetStateAction<"list" | "editor" | "recorder" | "transcription" | "chat" | "image" | "checklist">>;
   handleNewTextNote: () => void;
 }
