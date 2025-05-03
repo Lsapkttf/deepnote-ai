@@ -85,6 +85,21 @@ const Index = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [sidebarOpen]);
 
+  // Click anywhere on mobile to close sidebar
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (sidebarOpen && isMobile) {
+        const sidebarElement = document.querySelector('[class*="fixed inset-y-0 left-0 z-20 w-72"]');
+        if (sidebarElement && !sidebarElement.contains(event.target as Node)) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, [sidebarOpen, isMobile]);
+
   const toggleSidebar = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setSidebarOpen(!sidebarOpen);
@@ -126,7 +141,7 @@ const Index = () => {
         "Note vocale",
         "",
         "voice",
-        "yellow"
+        "yellow" as NoteColor
       );
       
       await updateNote(newNote.id, { transcription });
@@ -268,17 +283,16 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {!isMobile && (
-        <AppBar 
-          toggleSidebar={toggleSidebar}
-          handleBackToList={handleBackToList}
-          view={view}
-          setSettingsDialogOpen={setSettingsDialogOpen}
-          isMobile={isMobile}
-          searchQuery={searchQuery}
-          onSearchChange={handleSearch}
-        />
-      )}
+      {/* Desktop App Bar - Always show it for consistency */}
+      <AppBar 
+        toggleSidebar={toggleSidebar}
+        handleBackToList={handleBackToList}
+        view={view}
+        setSettingsDialogOpen={setSettingsDialogOpen}
+        isMobile={isMobile}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearch}
+      />
       
       {isMobile && (
         <MobileNav 
@@ -310,7 +324,7 @@ const Index = () => {
               </div>
               
               <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                <h2 className="text-xl font-bold capitalize">
+                <h2 className="text-xl font-bold capitalize dark:text-white">
                   {searchQuery ? `Résultats pour "${searchQuery}"` :
                    selectedCategory === "notes" ? "Mes notes" : 
                    selectedCategory === "recent" ? "Notes récentes" : 
@@ -388,6 +402,9 @@ const Index = () => {
         view={view}
         setView={setView}
         handleNewTextNote={handleNewTextNote}
+        handleNewVoiceNote={handleNewTranscription}
+        handleAddImage={handleAddImage}
+        handleCreateChecklist={handleCreateChecklist}
       />
       
       <MobileFloatingMenu 

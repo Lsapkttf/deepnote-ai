@@ -6,6 +6,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import SearchBar from '@/components/layout/SearchBar';
 import { toast } from 'sonner';
 import { signOut } from '@/services/authService';
+import UserMenu from '@/components/UserMenu';
 
 interface AppBarProps {
   toggleSidebar: (e?: React.MouseEvent) => void;
@@ -33,7 +34,6 @@ const AppBar: React.FC<AppBarProps> = ({
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="md:hidden"
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -66,33 +66,9 @@ const AppBar: React.FC<AppBarProps> = ({
         >
           <Settings className="h-5 w-5" />
         </Button>
-        <UserMenuButton />
+        <UserMenu />
       </div>
     </div>
-  );
-};
-
-// User Menu Button Component
-const UserMenuButton = () => {
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      // Redirection automatique se fera via l'écouteur d'état dans AuthContext
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-      toast.error("Erreur lors de la déconnexion. Veuillez réessayer.");
-    }
-  };
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-9 w-9"
-      onClick={handleLogout}
-    >
-      <LogOut className="h-5 w-5" />
-    </Button>
   );
 };
 

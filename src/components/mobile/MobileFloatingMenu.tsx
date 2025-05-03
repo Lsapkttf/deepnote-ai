@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Mic, ImageIcon, Text, CheckSquare, Pencil, X } from 'lucide-react';
+import { Mic, ImageIcon, Text, CheckSquare, ListTodo, Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 

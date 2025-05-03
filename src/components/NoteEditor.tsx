@@ -224,7 +224,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       )}
 
       {/* Note Content */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-4 note-content">
         <Input
           type="text"
           placeholder="Titre"
