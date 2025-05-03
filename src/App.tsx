@@ -80,11 +80,11 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner position="top-right" />
-            <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner position="top-right" />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 <Route element={<ProtectedRoute />}>
@@ -108,9 +108,9 @@ const App: React.FC = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <AIAssistantWrapper />
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+            </TooltipProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
   );
