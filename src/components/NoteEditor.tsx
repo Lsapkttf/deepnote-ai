@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { RichTextEditor } from './RichTextEditor';
+import RichTextEditor from './RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, Trash, Archive, Pin, MessageCircle, PenSquare, MoreVertical, X } from 'lucide-react';
 import { Note, NoteColor } from '@/types/note';
@@ -23,7 +23,7 @@ interface NoteEditorProps {
 }
 
 const colorOptions: { value: NoteColor; label: string; bg: string }[] = [
-  { value: 'default', label: 'Défaut', bg: 'bg-note-yellow/0 dark:bg-transparent border' },
+  { value: 'yellow', label: 'Défaut', bg: 'bg-note-yellow/0 dark:bg-transparent border' },
   { value: 'red', label: 'Rouge', bg: 'bg-note-red dark:bg-red-950' },
   { value: 'yellow', label: 'Jaune', bg: 'bg-note-yellow dark:bg-yellow-950' },
   { value: 'green', label: 'Vert', bg: 'bg-note-green dark:bg-green-950' },
@@ -43,7 +43,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 }) => {
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
-  const [color, setColor] = useState<NoteColor>(note?.color || 'default');
+  const [color, setColor] = useState<NoteColor>(note?.color || 'yellow');
   const [showColorPicker, setShowColorPicker] = useState(false);
   
   const isMobile = useIsMobile();
@@ -52,11 +52,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     if (note) {
       setTitle(note.title);
       setContent(note.content);
-      setColor(note.color || 'default');
+      setColor(note.color || 'yellow');
     } else {
       setTitle('');
       setContent('');
-      setColor('default');
+      setColor('yellow');
     }
   }, [note]);
 
@@ -158,7 +158,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
                 color === 'blue' && 'bg-note-blue',
                 color === 'purple' && 'bg-note-purple',
                 color === 'orange' && 'bg-note-orange',
-                color === 'default' && 'bg-background',
               )}></span>
             </span>
           </Button>
@@ -225,11 +224,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         />
         
         <RichTextEditor 
-          initialValue={content} 
+          value={content} 
           onChange={setContent} 
-          placeholder="Note"
-          onSave={handleSave}
-          alwaysRich={true}
+          className="min-h-[300px]"
         />
       </div>
 

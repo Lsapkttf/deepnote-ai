@@ -4,7 +4,7 @@ export interface Note {
   title: string;
   content: string;
   type: 'text' | 'voice' | 'image';
-  color?: NoteColor;
+  color: NoteColor;
   createdAt: string;
   updatedAt: string;
   archived?: boolean;
@@ -13,7 +13,7 @@ export interface Note {
   audioUrl?: string;
 }
 
-export type NoteColor = 'default' | 'red' | 'yellow' | 'green' | 'blue' | 'purple' | 'orange';
+export type NoteColor = 'yellow' | 'red' | 'green' | 'blue' | 'purple' | 'orange';
 
 export interface AppSettings {
   darkMode: boolean;

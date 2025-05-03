@@ -1,5 +1,5 @@
 
-export type NoteType = 'text' | 'voice';
+export type NoteType = 'text' | 'voice' | 'image';
 export type NoteColor = 'yellow' | 'red' | 'green' | 'blue' | 'purple' | 'orange';
 
 export interface Note {
@@ -31,7 +31,6 @@ export interface ChatMessage {
 }
 
 export interface AppSettings {
-  apiKey: string;
   darkMode: boolean;
   language: 'fr' | 'en';
   notifications: boolean;

@@ -11,6 +11,9 @@ interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  placeholder?: string;
+  onSave?: () => void;
+  alwaysRich?: boolean;
 }
 
 // Font size options
@@ -35,15 +38,38 @@ const BG_COLORS = [
   { name: "Rouge pâle", value: "bg-red-100 dark:bg-red-900", colorClass: "bg-red-100 dark:bg-red-900" },
 ];
 
-const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => {
+const RichTextEditor = ({ 
+  value, 
+  onChange, 
+  className, 
+  placeholder = "Note",
+  onSave,
+  alwaysRich = false
+}: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [fontSize, setFontSize] = useState<number>(16);
   const [selectedTextColor, setSelectedTextColor] = useState<string>(TEXT_COLORS[0].value);
   const [selectedBgColor, setSelectedBgColor] = useState<string>(BG_COLORS[0].value);
   
+  // Handle keyboard shortcut to save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (onSave) onSave();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onSave]);
+  
   // Ensure editor gets correct initial content and cursor position
   useEffect(() => {
-    if (editorRef.current && !editorRef.current.innerHTML && value) {
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
       editorRef.current.innerHTML = value;
     }
   }, [value, editorRef.current]);
@@ -286,6 +312,7 @@ const RichTextEditor = ({ value, onChange, className }: RichTextEditorProps) => 
         dangerouslySetInnerHTML={{ __html: value }}
         onInput={updateContent}
         onBlur={updateContent}
+        placeholder={placeholder}
       />
     </div>
   );
