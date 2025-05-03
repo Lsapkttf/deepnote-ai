@@ -26,3 +26,9 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+export interface AIAnalysis {
+  summary: string;
+  keyPoints: string[];
+  sentiment: string;
+}

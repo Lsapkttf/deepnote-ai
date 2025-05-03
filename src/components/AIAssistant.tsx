@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { chatWithAI } from "@/services/aiService";
 import { ChatMessage } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { useLocation } from "react-router-dom";
 
 const AIAssistant = () => {
   const [input, setInput] = useState("");
@@ -18,6 +18,12 @@ const AIAssistant = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addNote } = useNoteStore();
+  const location = useLocation();
+
+  // Don't show on auth pages
+  if (location.pathname.includes("/auth")) {
+    return null;
+  }
 
   useEffect(() => {
     scrollToBottom();

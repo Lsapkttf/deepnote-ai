@@ -7,7 +7,7 @@ import AIChat from "@/components/AIChat";
 import SettingsDialog from "@/components/SettingsDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import MobileNav from "@/components/MobileNav";
-import { Note, NoteColor } from "@/types/note";
+import { Note, NoteColor, AIAnalysis } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
 import { 
   Plus, 
@@ -331,14 +331,30 @@ const Index = () => {
     );
   };
 
-  // Convert aiAnalysis to string for NoteEditor component
+  // Convert aiAnalysis to string for NoteEditor component and handle type conversion
   const formattedAnalysis = aiAnalysis ? 
     typeof aiAnalysis === 'string' ? aiAnalysis : JSON.stringify(aiAnalysis) 
     : null;
   
   // Wrapper for the setAIAnalysis function to handle type conversion
   const handleSetAnalysis = (analysis: string | null) => {
-    setAIAnalysis(analysis);
+    if (analysis === null) {
+      setAIAnalysis(null);
+    } else {
+      try {
+        // Try to parse the string as JSON to convert it back to AIAnalysis
+        const parsedAnalysis = JSON.parse(analysis) as AIAnalysis;
+        setAIAnalysis(parsedAnalysis);
+      } catch (error) {
+        // If parsing fails, create a simple AIAnalysis object
+        const simpleAnalysis: AIAnalysis = {
+          summary: analysis,
+          keyPoints: [],
+          sentiment: "neutral"
+        };
+        setAIAnalysis(simpleAnalysis);
+      }
+    }
   };
 
   return (
