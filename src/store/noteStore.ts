@@ -16,7 +16,7 @@ interface NoteState {
   // Actions
   fetchNotes: () => Promise<void>;
   fetchArchivedNotes: () => Promise<void>;
-  addNote: (title: string, content: string, type: 'text' | 'voice', color?: NoteColor, audioUrl?: string) => Promise<Note>;
+  addNote: (title: string, content: string, type: 'text' | 'voice' | 'image', color?: NoteColor, audioUrl?: string) => Promise<Note>;
   updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   setCurrentNote: (note: Note | null) => void;
@@ -183,7 +183,7 @@ const useNoteStore = create<NoteState>((set, get) => ({
         title: data.title,
         content: data.content || "",
         transcription: data.transcription || undefined,
-        type: data.type as 'text' | 'voice',
+        type: data.type as 'text' | 'voice' | 'image',
         color: data.color as NoteColor,
         pinned: !!data.pinned,
         archived: !!data.archived,
