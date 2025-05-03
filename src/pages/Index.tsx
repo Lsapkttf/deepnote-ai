@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import NoteCard from "@/components/NoteCard";
@@ -332,6 +331,16 @@ const Index = () => {
     );
   };
 
+  // Convert aiAnalysis to string for NoteEditor component
+  const formattedAnalysis = aiAnalysis ? 
+    typeof aiAnalysis === 'string' ? aiAnalysis : JSON.stringify(aiAnalysis) 
+    : null;
+  
+  // Wrapper for the setAIAnalysis function to handle type conversion
+  const handleSetAnalysis = (analysis: string | null) => {
+    setAIAnalysis(analysis);
+  };
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {!isMobile && <AppBar />}
@@ -504,8 +513,8 @@ const Index = () => {
               onSave={handleSaveNote}
               onUpdate={handleUpdateNote}
               onBack={handleBackToList}
-              aiAnalysis={aiAnalysis}
-              setAIAnalysis={setAIAnalysis}
+              aiAnalysis={formattedAnalysis}
+              setAIAnalysis={handleSetAnalysis}
               onStartChat={handleStartChat}
             />
           )}

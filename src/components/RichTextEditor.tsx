@@ -38,7 +38,7 @@ const BG_COLORS = [
   { name: "Rouge pâle", value: "bg-red-100 dark:bg-red-900", colorClass: "bg-red-100 dark:bg-red-900" },
 ];
 
-const RichTextEditor = ({ 
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ 
   value, 
   onChange, 
   className, 
@@ -312,7 +312,7 @@ const RichTextEditor = ({
         dangerouslySetInnerHTML={{ __html: value }}
         onInput={updateContent}
         onBlur={updateContent}
-        placeholder={placeholder}
+        data-placeholder={placeholder}
       />
     </div>
   );

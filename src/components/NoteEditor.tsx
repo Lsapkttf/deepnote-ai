@@ -227,6 +227,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           value={content} 
           onChange={setContent} 
           className="min-h-[300px]"
+          alwaysRich={true}
         />
       </div>
 
