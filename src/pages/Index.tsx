@@ -1,44 +1,25 @@
 
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
-import NoteCard from "@/components/NoteCard";
 import NoteEditor from "@/components/NoteEditor";
 import RealTimeTranscription from "@/components/RealTimeTranscription";
 import AIChat from "@/components/AIChat";
 import SettingsDialog from "@/components/SettingsDialog";
-import ThemeToggle from "@/components/ThemeToggle";
 import MobileNav from "@/components/MobileNav";
-import { Note, NoteColor, AIAnalysis } from "@/types/note";
+import { Note, AIAnalysis } from "@/types/note";
 import useNoteStore from "@/store/noteStore";
-import { 
-  Plus, 
-  Mic, 
-  Loader2, 
-  Search, 
-  Filter, 
-  LayoutGrid, 
-  LayoutList, 
-  Menu, 
-  X, 
-  ArrowLeft,
-  Image as ImageIcon,
-  Pencil,
-  CheckSquare,
-  Text,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import FuturisticButton from "@/components/FuturisticButton";
-import { toast } from "sonner";
+import { Plus, Mic } from "lucide-react";
 import { checkApiKey } from "@/services/aiService";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+
+// Import refactored components
+import AppBar from "@/components/layout/AppBar";
+import NotesList from "@/components/notes/NotesList";
+import NoteFilters from "@/components/filters/NoteFilters";
+import MobileActionButtons from "@/components/mobile/MobileActionButtons";
+import MobileFloatingMenu from "@/components/mobile/MobileFloatingMenu";
+import { useNotesFiltering } from "@/hooks/useNotesFiltering";
 
 const Index = () => {
   const {
@@ -126,7 +107,7 @@ const Index = () => {
     setSelectedCategory(category);
   };
 
-  const handleSaveNote = async (title: string, content: string, color: NoteColor) => {
+  const handleSaveNote = async (title: string, content: string, color: string) => {
     try {
       await addNote(title || "Sans titre", content, "text", color);
       setView("list");
@@ -244,116 +225,12 @@ const Index = () => {
     createNewChecklist();
   };
 
-  const filteredNotes = notes.filter(note => {
-    if (selectedCategory === "notes" && note.archived) return false;
-    if (selectedCategory === "recent") {
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      return new Date(note.createdAt) >= oneWeekAgo && !note.archived;
-    }
-    if (selectedCategory === "archive" && !note.archived) return false;
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        note.title.toLowerCase().includes(query) || 
-        note.content.toLowerCase().includes(query) ||
-        (note.transcription && note.transcription.toLowerCase().includes(query))
-      );
-    }
-    
-    return true;
-  });
-  
-  const sortedNotes = [...filteredNotes].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  // Use the custom hook for notes filtering
+  const filteredNotes = useNotesFiltering(notes, selectedCategory, searchQuery);
 
   const handleBackToList = () => {
     setView("list");
   };
-
-  const SearchBar = () => (
-    <div className="relative w-full max-w-sm">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        placeholder="Rechercher dans les notes..."
-        value={searchQuery}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="pl-10 pr-9 w-full bg-background/80 backdrop-blur-sm border-muted"
-      />
-      {searchQuery && (
-        <button
-          onClick={() => handleSearch("")}
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  );
-
-  const AppBar = () => (
-    <div className="sticky top-0 z-10 flex items-center justify-between w-full px-4 h-16 border-b backdrop-blur-sm bg-background/80">
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="md:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        {view !== "list" && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleBackToList}
-            className="mr-1"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        
-        <h1 className="text-lg font-bold">DeepNote</h1>
-      </div>
-
-      <div className="hidden md:block flex-1 max-w-sm mx-auto">
-        <SearchBar />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:inline-flex h-9 w-9"
-          onClick={() => setSettingsDialogOpen(true)}
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-        <UserMenuButton />
-      </div>
-    </div>
-  );
-
-  // Composant pour le bouton du menu utilisateur
-  const UserMenuButton = () => (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-9 w-9"
-      onClick={() => {
-        toast.info("Déconnexion");
-        // Ajouter ici la logique de déconnexion
-      }}
-    >
-      <LogOut className="h-5 w-5" />
-    </Button>
-  );
 
   const handleNewTranscription = () => {
     setView("transcription");
@@ -361,61 +238,6 @@ const Index = () => {
 
   const handleCancelTranscription = () => {
     setView("list");
-  };
-
-  // Mobile action buttons (visible at bottom of screen)
-  const MobileActionButtons = () => {
-    if (view !== "list") return null;
-    
-    return (
-      <div className="fixed right-4 bottom-20 flex flex-col gap-3 items-end">
-        <Button
-          className="rounded-full bg-amber-600 hover:bg-amber-700 h-14 w-14 shadow-lg"
-          onClick={() => setView("transcription")}
-        >
-          <Mic className="h-6 w-6" />
-        </Button>
-        <Button
-          className="rounded-full bg-primary hover:bg-primary/90 h-14 w-14 shadow-lg"
-          onClick={handleNewTextNote}
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </div>
-    );
-  };
-
-  // Mobile floating actions menu
-  const MobileFloatingMenu = () => {
-    if (view !== "editor" || !isMobile) return null;
-
-    const actions = [
-      { icon: <Mic className="h-5 w-5" />, label: "Audio", onClick: () => handleNewVoiceNote() },
-      { icon: <ImageIcon className="h-5 w-5" />, label: "Image", onClick: () => handleAddImage() },
-      { icon: <Text className="h-5 w-5" />, label: "Texte", onClick: () => handleNewTextNote() },
-      { icon: <CheckSquare className="h-5 w-5" />, label: "Liste", onClick: () => handleCreateChecklist() },
-      { icon: <Pencil className="h-5 w-5" />, label: "Dessin", onClick: () => toast.info("Fonctionnalité de dessin en développement") },
-    ];
-
-    return (
-      <div className="fixed right-4 bottom-20 flex flex-col gap-3 items-end">
-        {actions.map((action, index) => (
-          <Button
-            key={index}
-            className="rounded-full bg-amber-700/80 hover:bg-amber-800 h-14 w-14 shadow-lg"
-            onClick={action.onClick}
-          >
-            {action.icon}
-          </Button>
-        ))}
-        <Button
-          className="rounded-full bg-amber-200 text-amber-900 hover:bg-amber-300 h-14 w-14 shadow-lg"
-          onClick={handleBackToList}
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-    );
   };
 
   // Convert aiAnalysis to string for NoteEditor component and handle type conversion
@@ -446,7 +268,17 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {!isMobile && <AppBar />}
+      {!isMobile && (
+        <AppBar 
+          toggleSidebar={toggleSidebar}
+          handleBackToList={handleBackToList}
+          view={view}
+          setSettingsDialogOpen={setSettingsDialogOpen}
+          isMobile={isMobile}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearch}
+        />
+      )}
       
       {isMobile && (
         <MobileNav 
@@ -474,7 +306,7 @@ const Index = () => {
           {view === "list" && (
             <div className="p-4 h-full flex flex-col overflow-hidden">
               <div className="md:hidden mb-4">
-                {!isMobile && <SearchBar />}
+                {/* Mobile search bar would go here */}
               </div>
               
               <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -485,127 +317,32 @@ const Index = () => {
                    "Archive"}
                 </h2>
                 
-                {!isMobile && (
-                  <div className="flex flex-wrap gap-2 sm:flex-nowrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-9">
-                          <Filter className="h-4 w-4 mr-2" />
-                          Filtres
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuItem 
-                          className="cursor-pointer"
-                          onClick={() => setSelectedCategory("notes")}
-                        >
-                          Toutes les notes
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="cursor-pointer"
-                          onClick={() => setSelectedCategory("recent")}
-                        >
-                          Notes récentes
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          className="cursor-pointer"
-                          onClick={() => setSelectedCategory("archive")}
-                        >
-                          Archive
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    
-                    <div className="flex border rounded-md overflow-hidden">
-                      <Button 
-                        variant={viewMode === "grid" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("grid")}
-                        className="rounded-none border-0"
-                      >
-                        <LayoutGrid className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant={viewMode === "list" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("list")}
-                        className="rounded-none border-0"
-                      >
-                        <LayoutList className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <FuturisticButton 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleNewTranscription}
-                      className="h-9"
-                    >
-                      <Mic className="h-4 w-4 mr-2" />
-                      Transcription vocale
-                    </FuturisticButton>
-                    
-                    <FuturisticButton 
-                      size="sm"
-                      gradient
-                      glow
-                      onClick={handleNewTextNote}
-                      className="h-9"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nouvelle note
-                    </FuturisticButton>
-                  </div>
-                )}
+                <NoteFilters 
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  handleNewTranscription={handleNewTranscription}
+                  handleNewTextNote={handleNewTextNote}
+                  isMobile={isMobile}
+                />
               </div>
               
               <div className="flex-1 overflow-auto pb-20 md:pb-4">
-                {isLoading ? (
-                  <div className="h-full flex flex-col items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="mt-2 text-muted-foreground">Chargement des notes...</p>
-                  </div>
-                ) : sortedNotes.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                    <p className="mb-4">
-                      {searchQuery 
-                        ? "Aucune note ne correspond à votre recherche"
-                        : selectedCategory === "archive" 
-                          ? "Aucune note archivée" 
-                          : "Aucune note"}
-                    </p>
-                    {!isMobile && (selectedCategory !== "archive" && !searchQuery) && (
-                      <div className="flex space-x-4">
-                        <FuturisticButton gradient glow onClick={handleNewTextNote}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Nouvelle note
-                        </FuturisticButton>
-                        <FuturisticButton variant="outline" onClick={handleNewVoiceNote}>
-                          <Mic className="h-4 w-4 mr-2" />
-                          Note vocale
-                        </FuturisticButton>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className={viewMode === "grid" 
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
-                    : "flex flex-col gap-3"
-                  }>
-                    {sortedNotes.map((note) => (
-                      <NoteCard
-                        key={note.id}
-                        note={note}
-                        listMode={viewMode === "list"}
-                        onClick={() => handleNoteClick(note)}
-                        onPin={() => togglePinNote(note.id)}
-                        onDelete={() => deleteNote(note.id)}
-                        onArchive={() => handleArchiveNote(note.id)}
-                      />
-                    ))}
-                  </div>
-                )}
+                <NotesList
+                  isLoading={isLoading}
+                  notes={filteredNotes}
+                  searchQuery={searchQuery}
+                  selectedCategory={selectedCategory}
+                  viewMode={viewMode}
+                  handleNoteClick={handleNoteClick}
+                  togglePinNote={togglePinNote}
+                  deleteNote={deleteNote}
+                  handleArchiveNote={handleArchiveNote}
+                  handleNewTextNote={handleNewTextNote}
+                  handleNewVoiceNote={handleNewVoiceNote}
+                  isMobile={isMobile}
+                />
               </div>
             </div>
           )}
@@ -647,48 +384,23 @@ const Index = () => {
         onOpenChange={setSettingsDialogOpen}
       />
       
-      {isMobile && <MobileActionButtons />}
-      {isMobile && <MobileFloatingMenu />}
+      <MobileActionButtons 
+        view={view}
+        setView={setView}
+        handleNewTextNote={handleNewTextNote}
+      />
+      
+      <MobileFloatingMenu 
+        view={view}
+        isMobile={isMobile}
+        handleNewVoiceNote={handleNewVoiceNote}
+        handleAddImage={handleAddImage}
+        handleNewTextNote={handleNewTextNote}
+        handleCreateChecklist={handleCreateChecklist}
+        handleBackToList={handleBackToList}
+      />
     </div>
   );
 };
-
-// Ajout du composant Settings et LogOut pour le menu mobile
-const Settings = (props: any) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const LogOut = (props: any) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-);
 
 export default Index;
