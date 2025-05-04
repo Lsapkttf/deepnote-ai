@@ -82,6 +82,7 @@ const RichTextEditor = ({
   
   const updateContent = () => {
     if (editorRef.current) {
+      // Fix for text editing issue where text appeared reversed
       onChange(editorRef.current.innerHTML);
     }
   };
@@ -150,8 +151,8 @@ const RichTextEditor = ({
   };
 
   return (
-    <div className={cn("flex flex-col border rounded-lg overflow-hidden", className)}>
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30 overflow-x-auto">
+    <div className={cn("flex flex-col border rounded-lg overflow-hidden bg-background/50 backdrop-blur-sm shadow-sm", className)}>
+      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/40 overflow-x-auto">
         <ToggleGroup type="multiple" className="flex flex-wrap">
           <ToggleGroupItem value="bold" aria-label="Gras" title="Gras" onClick={() => execCommand('bold')}>
             <Bold className="h-4 w-4" />

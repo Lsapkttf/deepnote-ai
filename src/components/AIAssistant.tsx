@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ const AIAssistant = () => {
 
   useEffect(() => {
     scrollToBottom();
-    // Focus sur l'input quand l'assistant s'ouvre
+    // Focus on input when assistant opens
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [messages]);
 
@@ -41,7 +42,7 @@ const AIAssistant = () => {
     
     setInput("");
     
-    // Ajouter le message de l'utilisateur
+    // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: messageToSend,
@@ -53,10 +54,10 @@ const AIAssistant = () => {
     setIsLoading(true);
     
     try {
-      // Utiliser une chaîne vide comme contexte pour le chat général
+      // Use empty context string for general chat
       const response = await chatWithAI(messageToSend, "", "general");
       
-      // Ajouter la réponse de l'assistant
+      // Add assistant response
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: response,
@@ -66,7 +67,7 @@ const AIAssistant = () => {
       
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error("Erreur de chat:", error);
+      console.error("Chat error:", error);
       toast.error("Erreur lors de la communication avec l'IA");
     } finally {
       setIsLoading(false);
@@ -131,7 +132,7 @@ const AIAssistant = () => {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="rounded-full fixed right-6 bottom-6 shadow-md hover:shadow-lg z-50 bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button variant="outline" size="icon" className="rounded-full fixed right-6 bottom-6 shadow-md hover:shadow-lg z-50 bg-primary text-primary-foreground hover:bg-primary/90 border-none">
           <MessageSquare className="h-5 w-5" />
         </Button>
       </SheetTrigger>
@@ -180,7 +181,7 @@ const AIAssistant = () => {
                         className={`rounded-lg p-3 ${
                           message.role === "user"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground"
+                            : "bg-muted text-foreground dark:text-white"
                         }`}
                       >
                         <div className="whitespace-pre-line">{message.content}</div>
@@ -190,7 +191,7 @@ const AIAssistant = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-7 text-xs"
+                              className="h-7 text-xs hover:bg-primary/10"
                               onClick={() => handleCreateNote(message.content)}
                             >
                               <Plus className="h-3 w-3 mr-1" />
@@ -246,7 +247,7 @@ const AIAssistant = () => {
               onClick={handleSendMessage}
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="shrink-0"
+              className="shrink-0 bg-primary hover:bg-primary/90"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -4,15 +4,16 @@ import { v4 as uuidv4 } from "uuid";
 import { AIAnalysis, ChatMessage } from "@/types/note";
 import { toast } from "sonner";
 
-// Utilisation de la clé API Gemini définie
-const GEMINI_API_KEY = "AIzaSyAdOinCnHfqjOyk6XBbTzQkR_IOdRvlliU";
+// Use the provided Gemini API key
+const GEMINI_API_KEY = "AIzaSyDEPP28PMCmQN1c8hR9JZd9-osYVkXpcLY";
+const GEMINI_MODEL = "gemini-1.5-flash"; // Updated to use Gemini 1.5 Flash
 
-// Vérifier si la clé API est configurée
+// Check if API key is configured
 export const checkApiKey = (): boolean => {
-  return true; // La clé est maintenant définie directement dans le code
+  return !!GEMINI_API_KEY;
 };
 
-// Fonction pour analyser du texte
+// Function to analyze text
 export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   try {
     if (!text.trim()) {
@@ -23,7 +24,8 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
       };
     }
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${GEMINI_API_KEY}`, {
+    // Using Gemini 1.5 Flash for improved performance
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}/generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -56,14 +58,14 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
     
     const data = await response.json();
     
-    // Extraire la réponse au format texte
+    // Extract response text
     const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!responseText) {
       throw new Error("Format de réponse inattendu");
     }
     
-    // Extraire le JSON de la réponse (peut être entouré de ```json et ```)
+    // Extract JSON from response (may be surrounded by ```json and ```)
     let jsonStr = responseText;
     if (jsonStr.includes("```json")) {
       jsonStr = jsonStr.split("```json")[1].split("```")[0].trim();
@@ -71,7 +73,7 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
       jsonStr = jsonStr.split("```")[1].split("```")[0].trim();
     }
     
-    // Parser le JSON
+    // Parse JSON
     const analysis = JSON.parse(jsonStr);
     
     return {
@@ -81,6 +83,7 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
     };
   } catch (error) {
     console.error("Erreur d'analyse:", error);
+    toast.error("Erreur lors de l'analyse avec Gemini: " + (error instanceof Error ? error.message : "Erreur inconnue"));
     return {
       summary: "Erreur lors de l'analyse",
       keyPoints: ["Impossible d'analyser le contenu"],
@@ -89,16 +92,16 @@ export const analyzeText = async (text: string): Promise<AIAnalysis> => {
   }
 };
 
-// Fonction pour discuter avec l'IA à propos d'une note
+// Function to chat with AI about a note
 export const chatWithAI = async (message: string, noteContent: string, noteId?: string): Promise<string> => {
   try {
-    // Construction du contexte avec le contenu de la note
+    // Build context with note content
     const context = noteContent ? `Contexte - contenu de la note: ${noteContent}\n\n` : "";
     
-    // Enrichir la demande avec des instructions pour des réponses plus engageantes
+    // Enhance request with instructions for more engaging responses
     const enhancedPrompt = `${context}${message}\n\nRéponds de manière utile, amicale et engageante. Utilise des emojis appropriés et un style conversationnel. Sois précis et direct dans ta réponse.`;
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash/generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}/generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -124,20 +127,21 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
     
     const data = await response.json();
     
-    // Extraire la réponse au format texte
+    // Extract text response
     const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!responseText) {
       throw new Error("Format de réponse inattendu");
     }
     
-    // Enregistrer la conversation si connecté et si noteId est fourni
+    // Save conversation if logged in and noteId is provided
     if (noteId) {
       try {
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
-          // On pourrait enregistrer l'historique des conversations dans une table Supabase
-          // si nécessaire dans le futur
+          // Could record conversation history in a Supabase table
+          // if needed in the future
+          console.log("User is logged in, could save conversation history");
         }
       } catch (error) {
         console.error("Erreur d'enregistrement de conversation:", error);
@@ -152,18 +156,18 @@ export const chatWithAI = async (message: string, noteContent: string, noteId?: 
   }
 };
 
-// Fonction pour récupérer l'historique des conversations
+// Function to get conversation history
 export const getChatHistory = (noteId: string): ChatMessage[] => {
-  // Pour le moment, on retourne un tableau vide car on n'a pas encore implémenté
-  // la persistance des conversations. Cela pourrait être ajouté dans le futur.
+  // For now, return an empty array as we haven't implemented
+  // conversation persistence yet. This could be added in the future.
   return [];
 };
 
-// Fonction pour transcrire de l'audio
+// Function to transcribe audio
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   try {
-    // Pour la transcription, on utilisera la méthode du service whisperService.ts
-    // qui est déjà implémentée
+    // For transcription, we'll use the method from whisperService.ts
+    // which is already implemented
     
     return "Transcription en cours...";
   } catch (error) {

@@ -53,8 +53,8 @@ const AIAssistantWrapper = () => {
 
 const App: React.FC = () => {
   useEffect(() => {
-    // Set Gemini API key globally (instead of asking users)
-    localStorage.setItem("geminiApiKey", "AIzaSyAdOinCnHfqjOyk6XBbTzQkR_IOdRvlliU");
+    // Set Gemini API key globally
+    localStorage.setItem("geminiApiKey", "AIzaSyDEPP28PMCmQN1c8hR9JZd9-osYVkXpcLY");
     
     // Empêcher le zoom sur les dispositifs mobiles
     const handleTouchStart = (e: TouchEvent) => {

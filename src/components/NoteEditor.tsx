@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import RichTextEditor from './RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, Trash, Archive, Pin, MessageCircle, PenSquare, MoreVertical, X } from 'lucide-react';
@@ -25,17 +25,6 @@ interface NoteEditorProps {
 const colorOptions: { value: NoteColor; label: string; bg: string }[] = [
   { value: 'yellow', label: 'Défaut', bg: 'bg-note-yellow/0 dark:bg-transparent border' },
   { value: 'red', label: 'Rouge', bg: 'bg-note-red dark:bg-red-950' },
-  { value: 'yellow', label: 'Jaune', bg: 'bg-note-yellow dark:bg-yellow-950' },
-  { value: 'green', label: 'Vert', bg: 'bg-note-green dark:bg-green-950' },
-  { value: 'blue', label: 'Bleu', bg: 'bg-note-blue dark:bg-blue-950' },
-  { value: 'purple', label: 'Violet', bg: 'bg-note-purple dark:bg-purple-950' },
-  { value: 'orange', label: 'Orange', bg: 'bg-note-orange dark:bg-orange-950' }
-];
-
-// Correction du problème de couleurs (il y avait deux "yellow")
-const fixedColorOptions: { value: NoteColor; label: string; bg: string }[] = [
-  { value: 'yellow', label: 'Défaut', bg: 'bg-note-yellow/0 dark:bg-transparent border' },
-  { value: 'red', label: 'Rouge', bg: 'bg-note-red dark:bg-red-950' },
   { value: 'green', label: 'Vert', bg: 'bg-note-green dark:bg-green-950' },
   { value: 'blue', label: 'Bleu', bg: 'bg-note-blue dark:bg-blue-950' },
   { value: 'purple', label: 'Violet', bg: 'bg-note-purple dark:bg-purple-950' },
@@ -55,6 +44,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [content, setContent] = useState(note?.content || '');
   const [color, setColor] = useState<NoteColor>(note?.color || 'yellow');
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
   
   const isMobile = useIsMobile();
   
@@ -98,15 +88,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   return (
     <div className={cn(
       "flex flex-col h-full",
-      color === 'yellow' && 'bg-note-yellow dark:bg-yellow-950/30',
-      color === 'red' && 'bg-note-red dark:bg-red-950/30',
-      color === 'green' && 'bg-note-green dark:bg-green-950/30',
-      color === 'blue' && 'bg-note-blue dark:bg-blue-950/30',
-      color === 'purple' && 'bg-note-purple dark:bg-purple-950/30',
-      color === 'orange' && 'bg-note-orange dark:bg-orange-950/30',
+      color === 'yellow' && 'bg-note-yellow/30 dark:bg-yellow-950/40',
+      color === 'red' && 'bg-note-red/30 dark:bg-red-950/40',
+      color === 'green' && 'bg-note-green/30 dark:bg-green-950/40',
+      color === 'blue' && 'bg-note-blue/30 dark:bg-blue-950/40',
+      color === 'purple' && 'bg-note-purple/30 dark:bg-purple-950/40',
+      color === 'orange' && 'bg-note-orange/30 dark:bg-orange-950/40',
     )}>
       {/* Toolbar */}
-      <div className="sticky top-0 z-10 flex items-center justify-between p-2 border-b bg-background/70 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 flex items-center justify-between p-2 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
@@ -201,10 +191,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       
       {/* Color Picker */}
       {showColorPicker && (
-        <div className="p-4 border-b bg-background/70 backdrop-blur-sm">
+        <div className="p-4 border-b bg-background/80 backdrop-blur-sm">
           <h3 className="font-medium mb-3">Couleur</h3>
           <div className="flex flex-wrap gap-2">
-            {fixedColorOptions.map((option) => (
+            {colorOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => {
@@ -243,10 +233,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* Mobile Bottom Actions */}
       {isMobile && (
-        <div className="sticky bottom-0 p-2 border-t bg-background/70 backdrop-blur-sm">
+        <div className="sticky bottom-0 p-2 border-t bg-background/80 backdrop-blur-sm">
           <Button 
             onClick={handleSave} 
-            className="w-full"
+            className="w-full bg-primary hover:bg-primary/90"
           >
             <Save className="h-4 w-4 mr-2" />
             Enregistrer
