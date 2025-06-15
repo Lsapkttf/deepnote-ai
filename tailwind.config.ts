@@ -25,6 +25,7 @@ export default {
       colors: {
         background: "#181A20",
         foreground: "#F5F7FB",
+        border: "#1BC6CF", // <------ Added border color matching accent. Adjust as needed!
         accent: {
           DEFAULT: "#27F7FF",
           500: "#1BC6CF",
@@ -68,3 +69,4 @@ export default {
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
+
