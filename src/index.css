@@ -1,325 +1,108 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262 83.3% 57.8%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 83.3% 57.8%;
-    --radius: 0.5rem;
-    
-    /* Couleurs pour les notes */
-    --note-yellow: 49 95% 82%;
-    --note-red: 0 85% 85%;
-    --note-green: 142 69% 80%;
-    --note-blue: 210 85% 85%;
-    --note-purple: 270 75% 85%;
-    --note-orange: 31 90% 80%;
-  }
- 
-  .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 0 0% 95%;
-    --card: 24 9.8% 10%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 263 85% 60%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 240 5% 84.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262 83.3% 57.8%;
-    
-    /* Couleurs pour les notes en mode sombre */
-    --note-yellow: 49 70% 40%;
-    --note-red: 0 70% 45%;
-    --note-green: 142 50% 35%;
-    --note-blue: 210 70% 40%;
-    --note-purple: 270 65% 40%;
-    --note-orange: 31 70% 45%;
-  }
+
+/* Futuristic App base background */
+body, html {
+  min-height: 100vh;
+  background: linear-gradient(135deg,#141627 0,#282a5a 60%,#1b163b 100%);
+  font-family: 'Roboto', Arial, sans-serif;
 }
- 
+html {
+  font-size: 17px;
+}
+h1, h2, h3, .futuristic-title {
+  font-family: 'Orbitron', 'Roboto', Arial, sans-serif;
+  letter-spacing: 0.045em;
+}
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-  
-  /* Assurer que tout texte est bien visible en mode sombre */
-  .dark p, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6, .dark span, .dark div {
-    color: hsl(var(--foreground));
-  }
-  
-  /* S'assurer que les notes ont un texte visible en mode sombre */
-  .dark .note-card-content {
-    color: rgba(255, 255, 255, 0.9);
-  }
-
-  /* S'assurer que le contenu de l'éditeur de notes est bien visible */
-  .dark .note-content, .dark [contenteditable] {
-    color: rgba(255, 255, 255, 0.9) !important;
-  }
-  
-  /* Styles pour les couleurs des notes */
-  .bg-note-yellow {
-    background-color: hsl(var(--note-yellow));
-  }
-  .bg-note-red {
-    background-color: hsl(var(--note-red));
-  }
-  .bg-note-green {
-    background-color: hsl(var(--note-green));
-  }
-  .bg-note-blue {
-    background-color: hsl(var(--note-blue));
-  }
-  .bg-note-purple {
-    background-color: hsl(var(--note-purple));
-  }
-  .bg-note-orange {
-    background-color: hsl(var(--note-orange));
-  }
-  
-  .bg-note-yellow\/20 {
-    background-color: hsl(var(--note-yellow) / 0.2);
-  }
-  .bg-note-red\/20 {
-    background-color: hsl(var(--note-red) / 0.2);
-  }
-  .bg-note-green\/20 {
-    background-color: hsl(var(--note-green) / 0.2);
-  }
-  .bg-note-blue\/20 {
-    background-color: hsl(var(--note-blue) / 0.2);
-  }
-  .bg-note-purple\/20 {
-    background-color: hsl(var(--note-purple) / 0.2);
-  }
-  .bg-note-orange\/20 {
-    background-color: hsl(var(--note-orange) / 0.2);
+    box-shadow: 0 2px 48px #0ff2ff08 inset;
   }
 }
 
-/* Animation pour l'enregistrement */
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-  }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: #26F6FF33; border-radius: 8px;}
+::-webkit-scrollbar-track { background: transparent;}
+
+/* Glassmorphism panels */
+.futuristic-glass {
+  background: rgba(36,41,57,0.80);
+  backdrop-filter: blur(32px) brightness(1.09) saturate(1.2);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 40px #29ffe333;
+  border: 1.5px solid #27f7ff22;
+  overflow: hidden;
+}
+.futuristic-card {
+  background: rgba(24,26,30,0.96);
+  border-radius: 1rem;
+  box-shadow: 0 0.7px 10px #27f7ff33, 0 1.5px 20px #0002;
+  border: 1.5px solid #27f7ff18;
+}
+/* Neon & hover */
+.futuristic-neon {
+  box-shadow: 0 0 9px #27f7ffAA,0 0 24px #00E5FF99;
+  background: linear-gradient(90deg,#27F7FF 0%, #8B5CF6 80%);
+  color: #181A20;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition: box-shadow 0.18s, background 0.18s;
+}
+.futuristic-neon:hover {
+  box-shadow: 0 0 28px #19C37DCC,0 0 50px #8B5CF6AA;
+  filter: brightness(0.96) contrast(1.23);
 }
 
-.recording-pulse {
-  animation: pulse 2s infinite;
+/* Animations */
+@keyframes neon-flyin {
+  0% { opacity:0; transform:translateY(32px) scale(0.92);}
+  100%{ opacity:1; transform:translateY(0) scale(1);}
+}
+.animate-flyin { animation: neon-flyin 0.7s cubic-bezier(.44,.34,0,1) 1;}
+
+.futuristic-sidebar {
+  background: rgba(34,48,84,0.86);
+  border-right: 2px solid #27f7ff29;
+  box-shadow: 0 0 32px #00e5ff10;
+}
+.futuristic-appbar {
+  background: rgba(24,24,44,0.82);
+  border-bottom: 2px solid #27f7ff18;
+  box-shadow: 0 2.5px 18px #27F7FF22;
 }
 
-/* Assurer que les barres de défilement sont cohérentes */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
-}
-
-/* Transitions fluides pour les changements de mode */
-html {
-  transition: background-color 0.3s ease;
-}
-
-/* Styles pour le bouton flottant d'action */
-.fab {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 50;
-  border-radius: 9999px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.fab:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Style pour les Chips / Tags */
-.chip {
-  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
-}
-
-.chip-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary/80;
-}
-
-.chip-secondary {
-  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
-}
-
-.chip-outline {
-  @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
-}
-
-/* Mode sombre: surcharges pour meilleure visibilité */
-.dark .note-list-item {
-  @apply bg-opacity-80 text-white;
-}
-
-.dark .note-title {
-  @apply text-white font-semibold;
-}
-
-/* Fix pour l'éditeur riche en mode sombre */
-.dark [contenteditable] {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* Correction pour l'orientation du texte dans l'éditeur */
-[contenteditable] {
-  direction: ltr !important;
-}
-
-/* --- Animations et FAB --- */
-@layer base {
-  .animate-fab-pulse {
-    animation: fab-pulse 2.2s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+/* Responsive spacing for modern look */
+@media (max-width: 900px) {
+  .futuristic-sidebar {
+    box-shadow: 0 0 30px #27F7FF33;
+    border-radius: 0 2rem 2rem 0;
   }
 }
-
-@keyframes fab-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(122, 80, 220, 0.30), 0 8px 24px rgba(50,50,100,0.07);
-  }
-  50% {
-    box-shadow: 0 0 0 20px rgba(122, 80, 220, 0.09), 0 12px 30px rgba(20,20,60,0.10);
-  }
+@media (max-width: 600px) {
+  .futuristic-glass, .futuristic-card { border-radius: 1.1em;}
 }
 
-/* Drop menus & overlays + z-index */
-.dropdown-menu,
-.dropdown-content,
-.radix-dropdown-menu__content {
-  background: hsl(var(--popover));
-  z-index: 120 !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+/* Example futuristic inputs/buttons for later usage */
+.futuristic-input {
+  @apply bg-background text-foreground border-accent/70 px-4 py-2 rounded-xl;
+  box-shadow: 0 1px 6px #27f7ff24;
 }
 
-.menu-overlay,
-.sidebar,
-.fab,
-[role="dialog"] {
-  z-index: 100 !important;
+.futuristic-btn {
+  @apply px-4 py-2 bg-gradient-to-br from-accent-neon to-primary-500 text-white rounded-xl font-bold;
+  box-shadow: 0 1px 9px #8B5CF6AA;
+  transition: opacity 0.18s, box-shadow 0.16s;
+}
+.futuristic-btn:hover {
+  opacity: 0.94;
+  box-shadow: 0 0 30px #27f7ffAA, 0 1px 26px #c084fc90;
 }
 
-@media (max-width: 768px) {
-  .note-content {
-    font-size: 1.03rem;
-  }
-  .sidebar {
-    max-width: 92vw;
-    width: 92vw;
-    min-width: 0;
-    border-radius: 0 1.2em 1.2em 0;
-    box-shadow: 0 5px 22px rgba(0,0,0,0.13);
-  }
-}
-
-/* --- Unified shadow/focus for accessibility -- */
-*:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 0 4px hsl(var(--primary) / 0.42);
-}
-
-.fab, .sidebar, .dropdown-menu, .note-card {
-  box-shadow: 0 6px 32px rgba(0,0,0,0.12) !important;
-}
-
-/* Layout adjustments for mobile cards/buttons/inputs */
-input, button {
-  border-radius: 0.65em !important;
-}
-
-/* Correction pour les polices sur mobile */
-html {
-  font-size: 17px;
-  @apply text-base;
-}
-
-/* Style pour les Chips / Tags */
-.chip {
-  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
-}
-
-.chip-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary/80;
-}
-
-.chip-secondary {
-  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
-}
-
-.chip-outline {
-  @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
-}
-
-/* Mode sombre: surcharges pour meilleure visibilité */
-.dark .note-list-item {
-  @apply bg-opacity-80 text-white;
-}
-
-.dark .note-title {
-  @apply text-white font-semibold;
-}
-
-/* Fix pour l'éditeur riche en mode sombre */
-.dark [contenteditable] {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* Correction pour l'orientation du texte dans l'éditeur */
-[contenteditable] {
-  direction: ltr !important;
-}
