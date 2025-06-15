@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Mic, Plus, Image, CheckSquare } from 'lucide-react';
+import { Mic, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -35,20 +35,6 @@ const MobileActionButtons: React.FC<MobileActionButtonsProps> = ({
         aria-label="Nouvelle note vocale"
       >
         <Mic className={iconBase} />
-      </Button>
-      <Button
-        className={cn(buttonBase, "bg-blue-600 hover:bg-blue-700 h-14 w-14")}
-        onClick={handleAddImage}
-        aria-label="Ajouter une image"
-      >
-        <Image className={iconBase} />
-      </Button>
-      <Button
-        className={cn(buttonBase, "bg-green-600 hover:bg-green-700 h-14 w-14")}
-        onClick={handleCreateChecklist}
-        aria-label="Créer une liste"
-      >
-        <CheckSquare className={iconBase} />
       </Button>
       <Button
         className={cn(buttonBase, mainFabClass, "flex items-center justify-center")}

@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Mic, ImageIcon, Text, CheckSquare, Pencil, X } from 'lucide-react';
+import { Mic, Text, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface MobileFloatingMenuProps {
@@ -31,10 +30,7 @@ const MobileFloatingMenu: React.FC<MobileFloatingMenuProps> = ({
 
   const actions = [
     { icon: <Mic className="h-5 w-5" />, label: "Audio", onClick: () => handleNewVoiceNote() },
-    { icon: <ImageIcon className="h-5 w-5" />, label: "Image", onClick: () => handleAddImage() },
-    { icon: <Text className="h-5 w-5" />, label: "Texte", onClick: () => handleNewTextNote() },
-    { icon: <CheckSquare className="h-5 w-5" />, label: "Liste", onClick: () => handleCreateChecklist() },
-    { icon: <Pencil className="h-5 w-5" />, label: "Dessin", onClick: () => toast.info("Bientôt le mode dessin !") },
+    { icon: <Text className="h-5 w-5" />, label: "Texte", onClick: () => handleNewTextNote() }
   ];
 
   return (

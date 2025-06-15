@@ -1,16 +1,12 @@
-import { Link } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Archive,
-  Clock,
   FileText,
   LogOut,
   PlusCircle,
   Settings,
-  Star,
-  Trash,
   User,
 } from "lucide-react";
 import { signOut } from "@/services/authService";
@@ -150,36 +146,12 @@ const Sidebar = ({
                   Toutes les notes
                 </Button>
                 <Button
-                  variant={selectedCategory === "recent" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => onSelectCategory("recent")}
-                >
-                  <Clock className="mr-2 h-4 w-4" />
-                  Récentes
-                </Button>
-                <Button
-                  variant={selectedCategory === "pinned" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => onSelectCategory("pinned")}
-                >
-                  <Star className="mr-2 h-4 w-4" />
-                  Épinglées
-                </Button>
-                <Button
                   variant={selectedCategory === "archive" ? "secondary" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => onSelectCategory("archive")}
                 >
                   <Archive className="mr-2 h-4 w-4" />
                   Archive
-                </Button>
-                <Button
-                  variant={selectedCategory === "trash" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => onSelectCategory("trash")}
-                >
-                  <Trash className="mr-2 h-4 w-4" />
-                  Corbeille
                 </Button>
               </div>
             </div>
@@ -194,6 +166,7 @@ const Sidebar = ({
             </div>
           )}
           <div className="flex flex-row space-x-2">
+            {/* Paramètres et Déconnexion (optionnel/IA possible) */}
             <Button 
               variant="outline" 
               size="sm" 
