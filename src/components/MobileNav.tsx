@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Sheet,
@@ -71,25 +70,19 @@ const MobileNav = ({
 
   if (!isMobile) return null;
 
-  const handleFilterClick = (filter: string) => {
-    if (onFilterChange) {
-      onFilterChange(filter);
-    }
-  };
-
   return (
-    <div className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm border-b">
+    <nav className="sticky top-0 z-[70] w-full backdrop-blur-lg bg-background/80 border-b">
       <div className="flex items-center justify-between py-2 px-3">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={onOpenSidebar}
-            className="rounded-full"
+            className="rounded-full focus-visible:ring-2"
+            aria-label="Ouvrir le menu"
           >
             <Menu className="h-5 w-5" />
           </Button>
-          
           {isSearchOpen ? (
             <Input
               placeholder="Rechercher dans vos notes"
@@ -104,12 +97,12 @@ const MobileNav = ({
               variant="ghost"
               className="justify-start text-muted-foreground h-9 px-3"
               onClick={() => setIsSearchOpen(true)}
+              aria-label="Ouvrir recherche"
             >
               Rechercher dans vos notes
             </Button>
           )}
         </div>
-
         <div className="flex items-center gap-1">
           {!isSearchOpen && (
             <>
@@ -117,7 +110,8 @@ const MobileNav = ({
                 variant="ghost" 
                 size="icon" 
                 onClick={onOpenSettings} 
-                className="rounded-full"
+                className="rounded-full focus-visible:ring-2"
+                aria-label="Paramètres"
               >
                 <Settings className="h-5 w-5" />
               </Button>
@@ -126,7 +120,7 @@ const MobileNav = ({
           )}
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

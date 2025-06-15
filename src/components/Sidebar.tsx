@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -53,51 +52,33 @@ const Sidebar = ({
   };
 
   return (
-    <div
-      className={`fixed inset-y-0 left-0 z-20 w-72 transform border-r bg-background transition-transform duration-200 ease-in-out md:translate-x-0 ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
-    >
-      <div className="flex h-16 items-center border-b px-6">
-        <h2 className="text-lg font-bold">DeepNote</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-2 top-3 md:hidden"
-          onClick={onClose}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-5 w-5"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </Button>
-      </div>
-
-      <div className="p-4">
-        <div className="flex flex-col space-y-1">
+    <>
+      {/* Overlay pour mobile */}
+      <div
+        className={`
+          fixed inset-0 z-10 bg-black/35 backdrop-blur-sm transition-opacity duration-200
+          ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"} md:hidden
+        `}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside
+        className={`
+          sidebar
+          fixed inset-y-0 left-0 z-20 w-72 transform border-r bg-background transition-transform duration-200 ease-in-out md:translate-x-0
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          shadow-lg
+        `}
+        aria-label="Navigation latérale"
+      >
+        <div className="flex h-16 items-center border-b px-6 bg-background/80">
+          <h2 className="text-lg font-bold">DeepNote</h2>
           <Button
-            onClick={onNewTextNote}
-            className="justify-start"
-            variant="default"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nouvelle note
-          </Button>
-          <Button
-            onClick={onNewVoiceNote}
-            className="justify-start"
-            variant="outline"
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-3 md:hidden"
+            onClick={onClose}
+            aria-label="Fermer le menu"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -109,71 +90,103 @@ const Sidebar = ({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="mr-2 h-4 w-4"
+              className="h-5 w-5"
             >
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="22"></line>
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
-            Transcription vocale
           </Button>
         </div>
-      </div>
 
-      <ScrollArea className="h-[calc(100vh-16rem)]">
-        <div className="space-y-4 py-4">
-          <div className="px-4 py-2">
-            <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
-              Catégories
-            </h2>
-            <div className="space-y-1">
-              <Button
-                variant={selectedCategory === "notes" ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => onSelectCategory("notes")}
+        <div className="p-4">
+          <div className="flex flex-col space-y-1">
+            <Button
+              onClick={onNewTextNote}
+              className="justify-start"
+              variant="default"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nouvelle note
+            </Button>
+            <Button
+              onClick={onNewVoiceNote}
+              className="justify-start"
+              variant="outline"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-2 h-4 w-4"
               >
-                <FileText className="mr-2 h-4 w-4" />
-                Toutes les notes
-              </Button>
-              <Button
-                variant={selectedCategory === "recent" ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => onSelectCategory("recent")}
-              >
-                <Clock className="mr-2 h-4 w-4" />
-                Récentes
-              </Button>
-              <Button
-                variant={selectedCategory === "pinned" ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => onSelectCategory("pinned")}
-              >
-                <Star className="mr-2 h-4 w-4" />
-                Épinglées
-              </Button>
-              <Button
-                variant={selectedCategory === "archive" ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => onSelectCategory("archive")}
-              >
-                <Archive className="mr-2 h-4 w-4" />
-                Archive
-              </Button>
-              <Button
-                variant={selectedCategory === "trash" ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => onSelectCategory("trash")}
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Corbeille
-              </Button>
-            </div>
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="22"></line>
+              </svg>
+              Transcription vocale
+            </Button>
           </div>
         </div>
-      </ScrollArea>
 
-      <div className="absolute bottom-0 w-full border-t p-4">
-        <div className="flex flex-col space-y-2">
+        <ScrollArea className="h-[calc(100vh-18rem)]">
+          <div className="space-y-4 py-4">
+            <div className="px-4 py-2">
+              <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
+                Catégories
+              </h2>
+              <div className="space-y-1">
+                <Button
+                  variant={selectedCategory === "notes" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => onSelectCategory("notes")}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Toutes les notes
+                </Button>
+                <Button
+                  variant={selectedCategory === "recent" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => onSelectCategory("recent")}
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  Récentes
+                </Button>
+                <Button
+                  variant={selectedCategory === "pinned" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => onSelectCategory("pinned")}
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  Épinglées
+                </Button>
+                <Button
+                  variant={selectedCategory === "archive" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => onSelectCategory("archive")}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive
+                </Button>
+                <Button
+                  variant={selectedCategory === "trash" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => onSelectCategory("trash")}
+                >
+                  <Trash className="mr-2 h-4 w-4" />
+                  Corbeille
+                </Button>
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+
+        <div className="absolute bottom-0 w-full border-t p-4 bg-background/90">
           {user && (
             <div className="flex items-center space-x-2 rounded-md bg-muted p-2 text-sm">
               <User className="h-4 w-4 text-muted-foreground" />
@@ -201,8 +214,8 @@ const Sidebar = ({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 };
 

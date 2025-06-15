@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import RichTextEditor from './RichTextEditor';
 import { Button } from '@/components/ui/button';
@@ -87,7 +86,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   return (
     <div className={cn(
-      "flex flex-col h-full",
+      "flex flex-col h-full min-h-screen transition-colors",
       color === 'yellow' && 'bg-note-yellow/30 dark:bg-yellow-950/40',
       color === 'red' && 'bg-note-red/30 dark:bg-red-950/40',
       color === 'green' && 'bg-note-green/30 dark:bg-green-950/40',
@@ -96,7 +95,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       color === 'orange' && 'bg-note-orange/30 dark:bg-orange-950/40',
     )}>
       {/* Toolbar */}
-      <div className="sticky top-0 z-10 flex items-center justify-between p-2 border-b bg-background/80 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 flex items-center justify-between p-2 border-b bg-background/85 backdrop-blur-lg shadow-sm">
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
@@ -191,7 +190,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       
       {/* Color Picker */}
       {showColorPicker && (
-        <div className="p-4 border-b bg-background/80 backdrop-blur-sm">
+        <div className="p-4 border-b bg-background/90 backdrop-blur-lg shadow-sm">
           <h3 className="font-medium mb-3">Couleur</h3>
           <div className="flex flex-wrap gap-2">
             {colorOptions.map((option) => (
@@ -214,13 +213,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       )}
 
       {/* Note Content */}
-      <div className="flex-1 overflow-auto p-4 note-content">
+      <div className="flex-1 overflow-auto p-4 pb-28 sm:pb-8 note-content">
         <Input
           type="text"
           placeholder="Titre"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="text-2xl font-bold border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 mb-4"
+          className="text-2xl font-bold border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 mb-4 placeholder:text-muted-foreground"
         />
         
         <RichTextEditor 
@@ -233,10 +232,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* Mobile Bottom Actions */}
       {isMobile && (
-        <div className="sticky bottom-0 p-2 border-t bg-background/80 backdrop-blur-sm">
+        <div className="sticky bottom-0 z-40 p-2 border-t bg-background/95 backdrop-blur-lg shadow flex flex-row">
           <Button 
             onClick={handleSave} 
-            className="w-full bg-primary hover:bg-primary/90"
+            className="w-full bg-primary hover:bg-primary/90 text-lg font-medium py-3 rounded-xl"
           >
             <Save className="h-4 w-4 mr-2" />
             Enregistrer

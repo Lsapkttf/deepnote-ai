@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      calories: {
+        Row: {
+          calories_burned: number
+          created_at: string
+          id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          calories_burned: number
+          created_at?: string
+          id?: string
+          timestamp: string
+          user_id?: string | null
+        }
+        Update: {
+          calories_burned?: number
+          created_at?: string
+          id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      heart_rate: {
+        Row: {
+          bpm: number
+          created_at: string
+          id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          bpm: number
+          created_at?: string
+          id?: string
+          timestamp: string
+          user_id?: string | null
+        }
+        Update: {
+          bpm?: number
+          created_at?: string
+          id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           archived: boolean | null
@@ -47,6 +95,105 @@ export type Database = {
           transcription?: string | null
           type?: string
           updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      oxygen: {
+        Row: {
+          created_at: string
+          id: string
+          oxygen_saturation: number
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          oxygen_saturation: number
+          timestamp: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          oxygen_saturation?: number
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      sleep: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          sleep_stage: string
+          start_time: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          sleep_stage?: string
+          start_time: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          sleep_stage?: string
+          start_time?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      steps: {
+        Row: {
+          created_at: string
+          id: string
+          steps: number
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          steps: number
+          timestamp: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          steps?: number
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      stress: {
+        Row: {
+          created_at: string
+          id: string
+          stress_level: number
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stress_level: number
+          timestamp: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stress_level?: number
+          timestamp?: string
           user_id?: string | null
         }
         Relationships: []
